@@ -181,4 +181,21 @@ def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:
         f_food = clip01(raw_food)
         factors.append(f_food)
 
-    return liebig_min(*factors).astype(np.float32)
+    suit = liebig_min(*factors).astype(np.float32)
+
+    # v1.5.5 — FOUNDER SUITABILITY FLOOR. Durante los primeros 150 años
+    # desde born_at, suit tiene un piso de 0.45. Esto:
+    #   1) reduce p_unfit al máx 0.076/año (era 3% capped por otra vía)
+    #   2) SUBE p_breed (min·1·max(suit,0.05)) → reproducción viable aunque
+    #      f_medium/f_food sean marginales.
+    #   3) sube sqrt(suit)·0.5 en la ganancia de energy → menos hambre.
+    # El diagnóstico: v1.5.4 protegía la mortalidad pero no la reproducción.
+    # Sin natalidad suficiente, p_old=8%/año consume a los fundadores en
+    # décadas aunque nadie los mate específicamente.
+    current_year = micro_dict.get("_current_year")
+    if current_year is not None:
+        age = current_year - pop.template.born_at
+        if age < 150.0:
+            floor = 0.45 * (1.0 - age / 150.0) + 0.15
+            suit = np.maximum(suit, floor)
+    return suit
