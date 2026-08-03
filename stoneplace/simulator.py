@@ -51,6 +51,12 @@ class SimConfig:
     founder_size_plant: int = 400
     founder_size_fungi: int = 300
     founder_size_animal: int = 600
+    # Tope duro por especie: si una supera este número, se descarta
+    # aleatoriamente el excedente. Evita que mundos grandes revienten
+    # la memoria del runner cuando una especie explota demográficamente.
+    max_pop_per_species: int = 300_000
+    # Cada cuántos snapshots de telemetría volcar a disco (checkpoint).
+    dump_every_snapshots: int = 20
 
 
 class Simulation:
@@ -186,6 +192,13 @@ class Simulation:
         for pop in self.pops:
             if pop.n == 0:
                 continue
+            # Tope global por especie: si excede el máximo, thinning aleatorio.
+            if pop.n > self.cfg.max_pop_per_species:
+                keep_p = self.cfg.max_pop_per_species / pop.n
+                keep = self.rng.random(pop.n) < keep_p
+                pop.kill_mask(keep)
+                if pop.n == 0:
+                    continue
 
             # 1. Movimiento (animales) / dispersión pasiva (plantas)
             if pop.template.kingdom == "chordata":
@@ -266,7 +279,12 @@ class Simulation:
             row = self.telemetry.snapshot(self.year, self.pops, self.biome_map)
             print(f"  año {self.year:>5.0f} | especies vivas: "
                   f"{row['species_alive']:>3} | población total: "
-                  f"{row['total_pop']:>7}")
+                  f"{row['total_pop']:>7}", flush=True)
+            # Checkpoint: volcar a disco cada N snapshots para no perder
+            # progreso si el proceso muere (timeout, OOM…).
+            if (len(self.telemetry.rows) % self.cfg.dump_every_snapshots) == 0:
+                self.telemetry.dump()
+                self.telemetry.dump_species_cards(self.pops)
 
         self.year += dt
 

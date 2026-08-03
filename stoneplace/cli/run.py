@@ -25,6 +25,10 @@ def main():
     p.add_argument("--mutation-rate", type=float, default=5e-4)
     p.add_argument("--mutation-sigma", type=float, default=2.5)
     p.add_argument("--env-sigma", type=float, default=8.0)
+    p.add_argument("--max-pop-per-species", type=int, default=300_000,
+                   help="Tope duro por especie (thinning aleatorio si se supera)")
+    p.add_argument("--dump-every-snapshots", type=int, default=20,
+                   help="Volcar telemetría a disco cada N snapshots")
     args = p.parse_args()
 
     cfg = SimConfig(
@@ -43,6 +47,8 @@ def main():
         mutation_rate=args.mutation_rate,
         mutation_sigma=args.mutation_sigma,
         env_sigma=args.env_sigma,
+        max_pop_per_species=args.max_pop_per_species,
+        dump_every_snapshots=args.dump_every_snapshots,
     )
     Simulation(cfg).run()
 
