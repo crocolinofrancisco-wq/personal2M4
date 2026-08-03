@@ -1,0 +1,19 @@
+[
+  {
+    "kind": "impact",
+    "at_year": 4000,
+    "params": {"y": 40, "x": 200, "radius_cells": 40, "kill_prob": 0.85}
+  },
+  {
+    "kind": "glaciation",
+    "at_year": 6000,
+    "duration_years": 500,
+    "params": {"delta_c": -8, "y_top": 0, "y_bottom": 80}
+  },
+  {
+    "kind": "eruption",
+    "at_year": 7100,
+    "duration_years": 5,
+    "params": {"delta_c": -3}
+  }
+]

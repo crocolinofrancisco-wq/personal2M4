@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Outputs de simulación (regenerables)
+outputs_smoke*/
+
+# Data raster local
+data/
+*.bin

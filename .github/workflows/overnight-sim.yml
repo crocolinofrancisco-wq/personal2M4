@@ -1,0 +1,73 @@
+name: Stoneplace overnight run
+
+on:
+  workflow_dispatch:
+    inputs:
+      total_years:
+        description: "Años del mundo a simular"
+        default: "800"
+      phase1_years:
+        description: "Años sólo con plantas/hongos antes de soltar fauna"
+        default: "150"
+      world_width:
+        description: "Ancho del mundo sintético (celdas)"
+        default: "400"
+      world_height:
+        description: "Alto del mundo sintético (celdas)"
+        default: "200"
+      max_pop_per_species:
+        description: "Tope duro por especie (thinning si se supera)"
+        default: "250000"
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    # ~5h50m: GitHub mata a las 6h. Dejamos margen para que el upload
+    # de artifacts termine bien.
+    timeout-minutes: 350
+    strategy:
+      # No cancelar el otro seed si uno falla.
+      fail-fast: false
+      matrix:
+        seed: [1, 2]
+    name: "seed-${{ matrix.seed }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run simulation
+        run: |
+          mkdir -p outputs_seed${{ matrix.seed }}
+          python -u -m stoneplace.cli.run \
+            --synthetic-size ${{ github.event.inputs.world_width }} ${{ github.event.inputs.world_height }} \
+            --seed ${{ matrix.seed }} \
+            --phase1-years ${{ github.event.inputs.phase1_years }} \
+            --total-years ${{ github.event.inputs.total_years }} \
+            --telemetry-every 10 \
+            --speciation-every 50 \
+            --founder-plant 500 \
+            --founder-fungi 400 \
+            --founder-animal 800 \
+            --max-pop-per-species ${{ github.event.inputs.max_pop_per_species }} \
+            --dump-every-snapshots 10 \
+            --out outputs_seed${{ matrix.seed }} \
+            2>&1 | tee outputs_seed${{ matrix.seed }}/run.log
+
+      - name: Upload artifacts
+        # Corre siempre — incluso si el timeout mata la simulación, sube
+        # lo que haya en outputs (los checkpoints periódicos).
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stoneplace-seed-${{ matrix.seed }}
+          path: outputs_seed${{ matrix.seed }}/
+          retention-days: 14
