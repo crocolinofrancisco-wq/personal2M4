@@ -238,9 +238,9 @@ class Simulation:
             self.world.layers["temperature"] = (self._base_temperature
                                                  + delta_t).astype(np.float32)
 
-        # Perturbaciones (impactos, glaciaciones)
-        for event in self.perturbations.due_for(self.year):
-            event.apply(self.world, self.pops, self.year, self.narrative)
+        # Perturbaciones (impactos, glaciaciones) — v1.5.1: se aplican
+        # sobre _base_temperature y persisten mientras dura el evento.
+        self.perturbations.apply_step(self, self.year)
 
         # Reclasificar biomas (ahora sí cambia — la temperatura oscila)
         if (int(self.year) % self.cfg.reclassify_biomes_every == 0

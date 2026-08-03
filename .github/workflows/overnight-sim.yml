@@ -27,6 +27,9 @@ on:
       snapshot_every:
         description: "PNG del mundo cada N años (0 = deshabilitado)"
         default: "200"
+      perturbations_file:
+        description: "JSON con perturbaciones (ruta relativa al repo, vacío = ninguna)"
+        default: "examples/glaciation_year_500.json"
 
 jobs:
   simulate:
@@ -59,6 +62,12 @@ jobs:
       - name: Run simulation
         run: |
           mkdir -p outputs_seed${{ matrix.seed }}
+          PERTURB_FLAG=""
+          if [ -n "${{ github.event.inputs.perturbations_file }}" ]; then
+            PERTURB_FLAG="--perturbations-file ${{ github.event.inputs.perturbations_file }}"
+            echo "Perturbations file: ${{ github.event.inputs.perturbations_file }}"
+            cat "${{ github.event.inputs.perturbations_file }}"
+          fi
           python -u -m stoneplace.cli.run \
             --synthetic-size ${{ github.event.inputs.world_width }} ${{ github.event.inputs.world_height }} \
             --seed ${{ matrix.seed }} \
@@ -72,6 +81,7 @@ jobs:
             --mutation-rate ${{ github.event.inputs.mutation_rate }} \
             --snapshot-every ${{ github.event.inputs.snapshot_every }} \
             --dump-every-snapshots 10 \
+            $PERTURB_FLAG \
             --out outputs_seed${{ matrix.seed }} \
             2>&1 | tee outputs_seed${{ matrix.seed }}/run.log
 
