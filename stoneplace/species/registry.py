@@ -248,7 +248,11 @@ def all_prototype_species(rng, map_rng=None) -> list[SpeciesTemplate]:
     para construir su GPMap. Esto congela la disposición locus↔rasgo
     independientemente del orden de creación (N2).
     """
-    factories = [poa_annua, helianthus_annuus, phyllostachys_edulis,
+    # v1.5.1 — Phyllostachys edulis (bambú) eliminado del set por defecto:
+    # su masa por individuo y su tasa de dispersión clonal lo hacían dominar
+    # el ecosistema en < 500 años, aplanando la selección. La factory sigue
+    # disponible por si se quiere añadir a mano.
+    factories = [poa_annua, helianthus_annuus,
                  orchis_stoneplace, pleurotus_ostreatus, yi_qi,
                  triops_longicaudatus]
     out = []

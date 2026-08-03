@@ -31,9 +31,9 @@ def main():
 
     cards = json.loads(Path("outputs_smoke/species.json").read_text())
     alive = [c for c in cards if c["current_population"] > 0]
-    # v1.5: tolerancia — cualquier extinción excepto Yi qi es aceptable
-    # (30 años en 48x24 es un mundo minúsculo).
-    assert len(alive) >= 5, f"solo {len(alive)} especies vivas al final"
+    # v1.5.1: quitamos el bambú del set default → ahora hay 6 fundadoras.
+    # Toleramos 4 supervivientes en 30 años en mundo minúsculo (48×24).
+    assert len(alive) >= 4, f"solo {len(alive)} especies vivas al final"
 
     yi = next(c for c in cards if c["scientific_name"] == "Yi qi")
     n = yi["current_population"]

@@ -1,3 +1,49 @@
+# Stoneplace v1.5.1 — Radiación adaptativa simpátrica
+
+Respuesta al primer run de v1.5.0 (`1200 años, 0 especiaciones, Fst≈0`).
+El diagnóstico fue estructural, no de tiempo: sin mecanismo que fragmente
+el flujo génico, más años = más de lo mismo. Fixes:
+
+- **Bambú fuera del set default** (`species/registry.all_prototype_species`).
+  Con `mass_g_opt=10 000` y dispersión clonal saturaba el ecosistema en
+  < 500 años y aplanaba la selección. La factory `phyllostachys_edulis`
+  sigue disponible por si se quiere añadir a mano.
+- **`mutation_rate` default 5e-4 → 1.2e-3** (~2.5×). Rango calibrado para
+  que rasgos como `salt_tolerance` de Triops puedan derivar ~10 puntos
+  en 500-1000 años sin extinguir a los fundadores por carga de mutación.
+- **Selección disruptiva sobre dieta** en `habitat.suitability` (estilo
+  Serina): dietas especialistas (Simpson's index alto) y dietas
+  divergentes del promedio poblacional reciben bonos multiplicativos
+  hasta ×1.25 y ×1.20 respectivamente. Los generalistas medios no
+  se penalizan (bonos ≥ 1.0), pero pierden competitivamente contra los
+  especialistas. Es el motor clásico de radiación adaptativa: siendo
+  ambas esquinas del simplex rentables y el intermedio peor, la
+  población se parte en morfotipos.
+- **Apareamiento asortativo por ecomorfo** (`population._assortative_choice`).
+  Cada hembra elige macho con probabilidad ∝ `attractiveness × exp(-α·dist_L1)`
+  donde la distancia es sobre `(diet_norm, log_mass, circadian)`. Con
+  `assort_p=0.55` y `α=2.5`, un carnívoro grande diurno tiende a aparearse
+  con carnívoros grandes diurnos incluso compartiendo celda. Esto es el
+  mecanismo que **cierra el loop de la selección disruptiva** — sin él,
+  la recombinación regenera al generalista tick tras tick.
+- **Especiación simpátrica en `try_speciate`**. El feature vector del
+  k-means ahora combina LOCI + coords + **ecomorfo** (dieta, masa, ritmo,
+  velocidad). El gate geográfico duro (`dist_max ≥ 10`) se sustituye por
+  `is_isolated_geo OR is_diverged_pheno` (distancia ecomorfológica ≥ 6).
+  Umbrales de Fst/Qst se relajan en el caso simpátrico (el aislamiento
+  reproductivo lo pone el asortativo, no la geografía).
+
+## GitHub Actions
+
+`.github/workflows/overnight-sim.yml` actualizado:
+- Añade inputs para `speciation_every`, `mutation_rate`, `snapshot_every`
+  y `seeds` (lista JSON para la matriz).
+- Corre `pytest tests/ -x` antes de la simulación (aborta si algo se rompe).
+- Imprime resumen (`phylo.nwk`, event kinds, últimas líneas del log) al final.
+- Default de años sube de 800 → 1200.
+
+---
+
 # Stoneplace v1.5 — Cambios respecto a v1.1
 
 Este release aplica las 16 críticas identificadas en `respuestas2.txt`

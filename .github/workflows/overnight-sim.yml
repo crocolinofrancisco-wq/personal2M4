@@ -5,7 +5,7 @@ on:
     inputs:
       total_years:
         description: "Años del mundo a simular"
-        default: "800"
+        default: "1200"
       phase1_years:
         description: "Años sólo con plantas/hongos antes de soltar fauna"
         default: "150"
@@ -15,9 +15,18 @@ on:
       world_height:
         description: "Alto del mundo sintético (celdas)"
         default: "200"
-      max_pop_per_species:
-        description: "Tope duro por especie (thinning si se supera)"
-        default: "250000"
+      speciation_every:
+        description: "Chequeo de especiación cada N años"
+        default: "25"
+      mutation_rate:
+        description: "Tasa de mutación por locus (default v1.5.1 = 1.2e-3)"
+        default: "1.2e-3"
+      seeds:
+        description: "Lista JSON de seeds a correr en paralelo (matriz)"
+        default: "[1, 2]"
+      snapshot_every:
+        description: "PNG del mundo cada N años (0 = deshabilitado)"
+        default: "200"
 
 jobs:
   simulate:
@@ -29,7 +38,7 @@ jobs:
       # No cancelar el otro seed si uno falla.
       fail-fast: false
       matrix:
-        seed: [1, 2]
+        seed: ${{ fromJSON(github.event.inputs.seeds) }}
     name: "seed-${{ matrix.seed }}"
     steps:
       - name: Checkout
@@ -44,6 +53,9 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
+      - name: Pytest (rápido, aborta el run si falla)
+        run: pytest tests/ -x
+
       - name: Run simulation
         run: |
           mkdir -p outputs_seed${{ matrix.seed }}
@@ -53,14 +65,34 @@ jobs:
             --phase1-years ${{ github.event.inputs.phase1_years }} \
             --total-years ${{ github.event.inputs.total_years }} \
             --telemetry-every 10 \
-            --speciation-every 50 \
+            --speciation-every ${{ github.event.inputs.speciation_every }} \
             --founder-plant 500 \
             --founder-fungi 400 \
             --founder-animal 800 \
-            --max-pop-per-species ${{ github.event.inputs.max_pop_per_species }} \
+            --mutation-rate ${{ github.event.inputs.mutation_rate }} \
+            --snapshot-every ${{ github.event.inputs.snapshot_every }} \
             --dump-every-snapshots 10 \
             --out outputs_seed${{ matrix.seed }} \
             2>&1 | tee outputs_seed${{ matrix.seed }}/run.log
+
+      - name: Resumen rápido en el job log
+        if: always()
+        run: |
+          echo "=== phylo.nwk ==="
+          cat outputs_seed${{ matrix.seed }}/phylo.nwk 2>/dev/null || echo "(no phylo)"
+          echo
+          echo "=== eventos de narrativa por tipo ==="
+          python -c "
+          import json, collections, pathlib
+          p = pathlib.Path('outputs_seed${{ matrix.seed }}/narrative.jsonl')
+          if p.exists():
+              kinds = collections.Counter(json.loads(l)['kind']
+                                          for l in p.read_text().splitlines())
+              print(dict(kinds))
+          " || true
+          echo
+          echo "=== últimas líneas del log ==="
+          tail -30 outputs_seed${{ matrix.seed }}/run.log || true
 
       - name: Upload artifacts
         # Corre siempre — incluso si el timeout mata la simulación, sube

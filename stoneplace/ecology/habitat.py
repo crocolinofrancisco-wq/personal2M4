@@ -99,6 +99,24 @@ def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:
         ], axis=1)
         diet = diet / np.maximum(diet.sum(axis=1, keepdims=True), 1e-6)
 
+        # v1.5.1 — SELECCIÓN DISRUPTIVA sobre dieta (estilo Serina).
+        # Dos bonos que empujan la población a las esquinas del simplex:
+        #   1. Especialista: Simpson's index (∑ p²) alto = dieta concentrada
+        #      en un único recurso → mejor conversión trófica.
+        #   2. Divergente: la individua cuyo perfil dietético se aleja del
+        #      perfil poblacional MEDIO evita competencia intraespecífica
+        #      (frequency-dependent selection, Rosenzweig 1978).
+        # Combinados, los generalistas medios pierden frente a los
+        # especialistas de nicho — el driver clásico de radiación adaptativa.
+        specialization = (diet ** 2).sum(axis=1)                  # 0.2 (uniforme) .. 1.0 (all-in)
+        pop_mean_diet = diet.mean(axis=0, keepdims=True)
+        divergence = 0.5 * np.abs(diet - pop_mean_diet).sum(axis=1)  # 0 .. 1
+        # Bonos NON-NEGATIVOS: el generalista no está penalizado; sólo el
+        # especialista y el divergente reciben ventaja. Evitamos la
+        # extinción de fundadores en mundos apretados.
+        specialist_bonus = 1.0 + 0.25 * (specialization - 0.2) / 0.8  # 1.00 (uniforme) .. 1.25 (all-in)
+        divergent_bonus = 1.0 + 0.20 * divergence                     # 1.00 .. 1.20
+
         if "bugs_local" in micro_dict:
             bugs_l = micro_dict["bugs_local"]
             meat_l = micro_dict["meat_local"]
@@ -117,6 +135,8 @@ def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:
             fish_l[y, x], micro_l[y, x],
         ], axis=1)
         raw_food = (diet * food_sources).sum(axis=1) * 1.5 + 0.1
+        # v1.5.1 — aplicar los dos bonos disruptivos
+        raw_food = raw_food * specialist_bonus * divergent_bonus
         # v1.5 (N8): distribución libre ideal — la comida por individuo
         # se diluye con la densidad LOCAL de la propia especie. Antes,
         # animal_walk atraía a todos al mismo pico → aglomeración.

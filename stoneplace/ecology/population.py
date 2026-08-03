@@ -47,6 +47,92 @@ def _build_density(pop: SpeciesPopulation, shape) -> np.ndarray:
     return m
 
 
+# ---------------------------------------------------------------------------
+# v1.5.1 — Apareamiento asortativo por ecomorfo (estilo Serina)
+# ---------------------------------------------------------------------------
+def _ecomorph_vector(pop: "SpeciesPopulation", idx) -> np.ndarray:
+    """Vector fenotípico "ecomorfo" — la coordenada donde una hembra busca
+    macho similar. Combina dieta normalizada + masa (log) + circadiano.
+
+    Estas son las tres dimensiones donde la selección disruptiva puede
+    partir una población: qué come, qué tan grande es, y cuándo está
+    activo. Un carnívoro grande diurno no se aparea con un herbívoro
+    pequeño nocturno aunque compartan celda.
+    """
+    p = pop.phenotype
+    diet = np.stack([
+        p["diet_bug"][idx], p["diet_meat"][idx], p["diet_vegetal"][idx],
+        p["diet_fish"][idx], p["diet_micro"][idx],
+    ], axis=1)
+    diet_norm = diet / np.maximum(diet.sum(axis=1, keepdims=True), 1e-6)
+    log_mass = np.log10(np.maximum(p["mass_g"][idx], 1e-3))[:, None] / 5.0
+    circadian = p["circadian"][idx][:, None] / 100.0
+    return np.concatenate([diet_norm, log_mass, circadian], axis=1).astype(np.float32)
+
+
+def _assortative_choice(pop, mother_idx, males, rng,
+                         alpha_assort: float = 2.5,
+                         assort_p: float = 0.55,
+                         min_pop_for_assort: int = 300) -> np.ndarray:
+    """Elige un padre por cada madre con sesgo por similitud fenotípica.
+
+    - Con probabilidad `assort_p` la hembra usa apareamiento asortativo:
+      pondera cada macho por `exp(-α · d_L1(v_hembra, v_macho)) · attractiveness`.
+    - Con probabilidad `1 - assort_p` mate is random attractiveness-biased
+      (mantiene flujo génico residual que evita fixation immediata).
+
+    Para no explotar O(N_f × N_m), asignamos cada macho a un "bin ecomorfo"
+    (round del vector fenotípico) y cada hembra elige entre machos del bin
+    más cercano con prob mayor.
+    """
+    if males.size == 0:
+        return np.array([], dtype=np.int64)
+    if males.size == 1 or mother_idx.size == 0:
+        return np.full(mother_idx.size, males[0], dtype=np.int64)
+
+    # Fundadoras: mientras la población sea pequeña, se aparean random-
+    # attractiveness. El asortativo aparece cuando hay suficientes machos
+    # para que el sesgo por ecomorfo tenga significado biológico.
+    if pop.n < min_pop_for_assort:
+        attr = pop.phenotype["attractiveness"][males] + 1e-3
+        return rng.choice(males, size=mother_idx.size,
+                           p=attr / attr.sum()).astype(np.int64)
+
+    # Vectores fenotípicos
+    v_f = _ecomorph_vector(pop, mother_idx)          # (F, D)
+    v_m = _ecomorph_vector(pop, males)               # (M, D)
+
+    # Attractiveness base de cada macho
+    attr = pop.phenotype["attractiveness"][males] + 1e-3
+    attr = attr / attr.sum()
+
+    # Máscara: ¿esta hembra usa asortativo este turno?
+    use_assort = rng.random(mother_idx.size) < assort_p
+
+    # Para muestras aleatorias (no asortativas): choice por attractiveness
+    random_partners = rng.choice(males, size=mother_idx.size, p=attr)
+
+    # Para asortativas: aproximación en 2 pasos —
+    #  1) sample K candidatos por attractiveness (K=8),
+    #  2) elegir entre esos K el más similar.
+    # O(F * K * D) — barato aunque F=100k.
+    K = 8
+    cand_idx_in_males = rng.choice(males.size, size=(mother_idx.size, K), p=attr)
+    cand_males = males[cand_idx_in_males]                    # (F, K)
+    cand_vecs = v_m[cand_idx_in_males]                        # (F, K, D)
+    # Distancia L1 entre la hembra y cada uno de sus K candidatos
+    d = np.abs(cand_vecs - v_f[:, None, :]).sum(axis=2)      # (F, K)
+    weights = np.exp(-alpha_assort * d)
+    weights = weights / (weights.sum(axis=1, keepdims=True) + 1e-9)
+    # Muestreo categórico vectorizado por fila
+    cum = np.cumsum(weights, axis=1)
+    u = rng.random(mother_idx.size)[:, None]
+    pick = (u < cum).argmax(axis=1)
+    assort_partners = cand_males[np.arange(mother_idx.size), pick]
+
+    return np.where(use_assort, assort_partners, random_partners).astype(np.int64)
+
+
 def reproduce(pop: SpeciesPopulation, world, biome_map, micro_dict,
               dt_years: float, mu: float, sigma_mut: float, rng,
               max_children_cap: int = 60000) -> tuple | None:
@@ -131,10 +217,8 @@ def reproduce(pop: SpeciesPopulation, world, biome_map, micro_dict,
             if males.size == 0:
                 sexual = False
             else:
-                # Sesgo por attractiveness
-                attr = pop.phenotype["attractiveness"][males] + 1e-3
-                p = attr / attr.sum()
-                father_idx = rng.choice(males, size=mother_idx.size, p=p)
+                father_idx = _assortative_choice(
+                    pop, mother_idx, males, rng)
         else:
             father_idx = rng.choice(pop.n, size=mother_idx.size)
 

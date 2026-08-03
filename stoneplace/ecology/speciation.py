@@ -22,6 +22,37 @@ from ..genetics.popgen import fst_wright_locus, qst_quantitative
 from ..genetics.gp_map import mutate_gp_map
 
 
+def _ecomorph_features(pop) -> np.ndarray:
+    """Ejes fenotípicos que definen "el mismo ecomorfo" para especiación.
+
+    Para chordata: dieta normalizada (5) + log(mass) + circadian + speed.
+    Para flora/fungi: photosynthesis/saprotrophy/parasitism + log(mass).
+    Estas son las dimensiones donde la selección disruptiva parte
+    poblaciones sin necesidad de aislamiento geográfico (Serina-style).
+    """
+    p = pop.phenotype
+    n = pop.n
+    if pop.template.kingdom == "chordata":
+        diet = np.stack([
+            p["diet_bug"], p["diet_meat"], p["diet_vegetal"],
+            p["diet_fish"], p["diet_micro"],
+        ], axis=1)
+        diet = diet / np.maximum(diet.sum(axis=1, keepdims=True), 1e-6)
+        log_mass = (np.log10(np.maximum(p["mass_g"], 1e-3)) / 5.0)[:, None]
+        circ = (p["circadian"] / 100.0)[:, None]
+        spd = (p.get("speed", np.full(n, 45.0)) / 100.0)[:, None]
+        return np.concatenate([diet, log_mass, circ, spd], axis=1).astype(np.float32)
+    # flora/fungi: modo trófico + tamaño
+    modes = np.stack([
+        p.get("photosynthesis", np.full(n, 50.0)),
+        p.get("saprotrophy", np.full(n, 20.0)),
+        p.get("parasitism", np.full(n, 5.0)),
+        p.get("carnivory", np.full(n, 2.0)),
+    ], axis=1) / 100.0
+    log_mass = (np.log10(np.maximum(p["mass_g"], 1e-3)) / 5.0)[:, None]
+    return np.concatenate([modes, log_mass], axis=1).astype(np.float32)
+
+
 # ---------------------------------------------------------------------------
 # Estado por-simulación (sin globals — N13, N14)
 # ---------------------------------------------------------------------------
@@ -124,14 +155,21 @@ def try_speciate(pop: SpeciesPopulation, world, current_year: float,
     if pop.n < 60:
         return []
     additive = pop.genome.additive()
+    # v1.5.1 — feature vector combinado: LOCI + COORDS + ECOMORFO.
+    # Añadir ejes fenotípicos (dieta, masa log, circadiano) permite
+    # detectar especiación simpátrica estilo Serina: dos morfotipos que
+    # comparten espacio pero ocupan nichos tróficos distintos aparecen
+    # como clústeres separados en el feature space aunque coords sean
+    # idénticas.
     coords = np.stack([pop.y / world.height, pop.x / world.width], axis=1) * 40.0
-    X = np.concatenate([additive, coords], axis=1)
+    ecomorpho = _ecomorph_features(pop) * 30.0     # escala equivalente a coords
+    X = np.concatenate([additive, coords, ecomorpho], axis=1)
 
     labels, k = _pick_best_split(X, rng, k_max=4)
     if labels is None or k < 2:
         return []
 
-    # Distancia máxima entre centroides como proxy de aislamiento
+    # Distancia entre centroides — GEOGRÁFICA (aislamiento espacial)
     centers_y = np.array([pop.y[labels == j].mean() for j in range(k)])
     centers_x = np.array([pop.x[labels == j].mean() for j in range(k)])
     dist_max = 0.0
@@ -140,7 +178,18 @@ def try_speciate(pop: SpeciesPopulation, world, current_year: float,
             d = float(np.hypot(centers_y[a] - centers_y[b],
                                 centers_x[a] - centers_x[b]))
             dist_max = max(dist_max, d)
-    is_isolated = dist_max >= 10.0
+    is_isolated_geo = dist_max >= 10.0
+
+    # v1.5.1 — DIVERGENCIA FENOTÍPICA entre clústeres (para simpátrica)
+    eco_centers = np.stack([ecomorpho[labels == j].mean(axis=0)
+                             for j in range(k)])
+    eco_dist_max = 0.0
+    for a in range(k):
+        for b in range(a + 1, k):
+            eco_dist_max = max(eco_dist_max,
+                                float(np.linalg.norm(eco_centers[a] - eco_centers[b])))
+    # Un valor de ~8-10 aquí ya representa diet vectors muy diferentes
+    is_diverged_pheno = eco_dist_max >= 6.0
 
     # Fst y Qst globales entre TODOS los grupos (media ponderada de pares)
     fst_total, qst_total, weight_total = 0.0, 0.0, 0.0
@@ -156,17 +205,29 @@ def try_speciate(pop: SpeciesPopulation, world, current_year: float,
     fst = fst_total / weight_total
     qst = qst_total / weight_total
 
+    # v1.5.1 — gate: contamos como divergencia sostenida si HAY aislamiento
+    # geográfico O si HAY divergencia fenotípica marcada. Antes sólo lo
+    # primero → especiación simpátrica imposible.
+    is_speciating = is_isolated_geo or is_diverged_pheno
+
     sid = pop.template.species_id
     hist = state.divergence_history.setdefault(sid, [])
-    hist.append((fst if is_isolated else 0.0, qst if is_isolated else 0.0))
+    hist.append((fst if is_speciating else 0.0,
+                 qst if is_speciating else 0.0))
     if len(hist) > state.history_window:
         hist.pop(0)
     if len(hist) < state.history_window:
         return []
-    if not all(f >= state.fst_sustain * 0.5 and q >= state.qst_sustain
-               for (f, q) in hist):
+    # Umbrales por-chequeo: si es simpátrica (fenotípica), aceptamos Fst
+    # más bajo porque el aislamiento reproductivo lo aporta el
+    # apareamiento asortativo.
+    fst_min = state.fst_sustain * (0.3 if is_diverged_pheno and not is_isolated_geo
+                                    else 0.5)
+    qst_min = state.qst_sustain * (0.7 if is_diverged_pheno and not is_isolated_geo
+                                    else 1.0)
+    if not all(f >= fst_min and q >= qst_min for (f, q) in hist):
         return []
-    if fst < state.fst_sustain or qst < state.qst_sustain * 1.2:
+    if fst < fst_min * 1.5 or qst < qst_min * 1.2:
         return []
 
     state.divergence_history[sid] = []

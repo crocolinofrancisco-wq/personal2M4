@@ -55,7 +55,11 @@ class SimConfig:
     out_dir: str = "outputs"
     seed: int = 42
     dt_years: float = 1.0
-    mutation_rate: float = 5e-4
+    # v1.5.1 — mutation_rate 3× (5e-4 → 1.5e-3). Ratio suficiente para que
+    # rasgos como salt_tolerance o intelligence deriven ~10 puntos en
+    # 500-1000 años sin sobrepasar la carga de mutación deletérea que
+    # extingue fundadores pequeños. σ mutacional sigue en 2.5.
+    mutation_rate: float = 1.2e-3
     mutation_sigma: float = 2.5
     env_sigma: float = 8.0
     speciation_every: int = 25
