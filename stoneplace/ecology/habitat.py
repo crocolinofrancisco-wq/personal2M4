@@ -9,14 +9,28 @@ import numpy as np
 from ..utils import clip01, gaussian_tolerance, liebig_min
 from ..world import biomes as B
 
+try:
+    from scipy.ndimage import uniform_filter as _scipy_uniform_filter
+    _HAS_SCIPY = True
+except Exception:                                       # pragma: no cover
+    _HAS_SCIPY = False
+
 
 def _local_mean(field: np.ndarray, radius: int = 2) -> np.ndarray:
-    """Media 8-conexa aproximada en un kernel (2*radius+1)². Sirve para
-    modelar el forrajeo local del animal (no come solo de la celda exacta).
-    Implementado con `np.roll` para mantenerse en NumPy puro y wraparound.
+    """Media local en un kernel (2*radius+1)² con wraparound toroidal.
+
+    Optimización P12/perf: cuando scipy está disponible se usa
+    `uniform_filter` (una pasada en C, ~10× más rápido que 25 `np.roll`).
+    Fallback a np.roll cuando scipy no está.
     """
     if radius <= 0:
         return field
+    if _HAS_SCIPY:
+        size = 2 * radius + 1
+        # mode='wrap' respeta el mundo toroidal que ya usa disperse_seeds.
+        return _scipy_uniform_filter(
+            field.astype(np.float32, copy=False), size=size, mode="wrap"
+        ).astype(np.float32)
     acc = np.zeros_like(field, dtype=np.float32)
     count = 0
     for dy in range(-radius, radius + 1):
@@ -50,54 +64,41 @@ def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:
     p = pop.phenotype
     aquatic = pop.template.hints.get("aquatic", False)
 
-    # Temperatura: exige estar entre min_temp y max_temp con curva suave
+    # Temperatura
     t_opt = (p["max_temp"] + p["min_temp"]) * 0.5
     t_sigma = np.maximum((p["max_temp"] - p["min_temp"]) * 0.35, 1.0)
     f_temp = gaussian_tolerance(T, t_opt, t_sigma)
 
     # Agua / medio
     if aquatic:
-        # Los acuáticos toleran también ríos activos y suelos anegados
-        # (pozas efímeras / humedales) — no sólo el mar/lago propiamente dicho.
         in_pool = (river_here > 0.05) | (aw_raw > 400)
         habitat_water = water_here | in_pool
         f_medium = np.where(habitat_water, 1.0, 0.05).astype(np.float32)
-        # Si están en río o poza dulce, la salinidad efectiva es ~0 (agua dulce).
         eff_salt = np.where(in_pool & ~water_here, 0.0, salt_here)
         f_salt = clip01(1.0 - np.maximum(eff_salt - p["salt_tolerance"], 0.0) / 30.0)
     else:
         f_medium = np.where(water_here, 0.02, 1.0).astype(np.float32)
-        # Sequía: la disponibilidad de agua limita a los terrestres
         f_medium = f_medium * clip01(aw + 0.15)
         f_salt = clip01(1.0 - np.maximum(salt_here - p["salt_tolerance"], 0.0) / 30.0)
 
     factors = [f_temp, f_salt, f_medium]
 
     if pop.template.kingdom in ("plantae", "fungi"):
-        # pH: entre min_ph y max_ph
         ph_opt = (p["max_ph"] + p["min_ph"]) * 0.5
         ph_sigma = np.maximum((p["max_ph"] - p["min_ph"]) * 0.4, 0.3)
         f_ph = gaussian_tolerance(ph, ph_opt, ph_sigma)
         factors.append(f_ph)
-        # Nutrientes: fertilidad importa mucho a plantas, algo a hongos
         weight = 0.9 if pop.template.kingdom == "plantae" else 0.5
         f_nut = clip01(fert * weight + (1.0 - weight))
         factors.append(f_nut)
 
     if pop.template.kingdom == "chordata":
-        # Comida disponible según dieta (biomasa local de las categorías).
-        # Se lee de un promedio 5x5 alrededor del individuo — modelo simple
-        # de forrajeo: el animal recorre metros a la redonda para comer,
-        # así que agotar la celda exacta no le mata al instante.
         diet = np.stack([
             p["diet_bug"], p["diet_meat"], p["diet_vegetal"],
             p["diet_fish"], p["diet_micro"],
         ], axis=1)
         diet = diet / np.maximum(diet.sum(axis=1, keepdims=True), 1e-6)
 
-        # Preferir los campos ya promediados por el simulador (una vez por
-        # tick); si no están (p.ej. tests que llaman suitability directo),
-        # calcularlos al vuelo como fallback.
         if "bugs_local" in micro_dict:
             bugs_l = micro_dict["bugs_local"]
             meat_l = micro_dict["meat_local"]
@@ -115,9 +116,26 @@ def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:
             bugs_l[y, x], meat_l[y, x], plant_l[y, x],
             fish_l[y, x], micro_l[y, x],
         ], axis=1)
-        # Piso 0.1 para no colapsar suit a cero por comida escasa (los
-        # animales tienen reservas). Aún así, sin apenas comida f_food<<1.
-        f_food = clip01((diet * food_sources).sum(axis=1) * 1.5 + 0.1)
+        raw_food = (diet * food_sources).sum(axis=1) * 1.5 + 0.1
+        # v1.5 (N8): distribución libre ideal — la comida por individuo
+        # se diluye con la densidad LOCAL de la propia especie. Antes,
+        # animal_walk atraía a todos al mismo pico → aglomeración.
+        density_local = micro_dict.get(f"density_{pop.template.species_id}")
+        if density_local is not None:
+            d_here = density_local[y, x].astype(np.float32)
+            # IFD blanda: la comida por individuo se reduce en tiles con
+            # densidad muy alta. K generosa + umbral inferior "gratis"
+            # (una manada nace amontonada, no la castigamos hasta que
+            # supera cierta densidad). La mortalidad density-dependent de
+            # `age_and_die` sigue siendo el freno principal.
+            crowd_tol = np.maximum(p.get("overcrowd_tolerance",
+                                          np.full(pop.n, 40.0)), 10.0)
+            free_density = 30.0 + crowd_tol            # margen gratis
+            K_local = 800.0 + 15.0 * crowd_tol
+            excess = np.maximum(d_here - free_density, 0.0)
+            competition = np.clip(excess / K_local, 0.0, 0.5)
+            raw_food = raw_food * (1.0 - competition)
+        f_food = clip01(raw_food)
         factors.append(f_food)
 
     return liebig_min(*factors).astype(np.float32)

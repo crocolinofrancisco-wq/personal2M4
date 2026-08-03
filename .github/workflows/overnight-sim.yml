@@ -5,26 +5,44 @@ on:
     inputs:
       total_years:
         description: "Años del mundo a simular"
-        default: "800"
+        default: "1000"
       phase1_years:
         description: "Años sólo con plantas/hongos antes de soltar fauna"
-        default: "150"
+        default: "100"
       world_width:
-        description: "Ancho del mundo sintético (celdas)"
+        description: "Ancho del mundo sintético (ignorado si world_bin está seteado)"
         default: "400"
       world_height:
-        description: "Alto del mundo sintético (celdas)"
+        description: "Alto del mundo sintético (ignorado si world_bin está seteado)"
         default: "200"
-      max_pop_per_species:
-        description: "Tope duro por especie (thinning si se supera)"
-        default: "250000"
+      world_bin:
+        description: "Ruta (relativa al repo) a un .bin real de SeedWorld. Vacío = mundo sintético."
+        default: ""
+      world_json:
+        description: "Ruta (relativa al repo) al .json que acompaña al world_bin."
+        default: ""
+      founder_plant:
+        description: "Fundadores por especie de planta"
+        default: "500"
+      founder_fungi:
+        description: "Fundadores por especie de hongo"
+        default: "400"
+      founder_animal:
+        description: "Fundadores por especie animal"
+        default: "800"
+      warn_pop_per_species:
+        description: "Umbral de aviso por especie (v1.5: sin cap duro, sólo warning)"
+        default: "500000"
+      perturbations_file:
+        description: "Ruta (relativa al repo) a un JSON de perturbaciones. Vacío = ninguna."
+        default: ""
 
 jobs:
   simulate:
     runs-on: ubuntu-latest
-    # ~5h50m: GitHub mata a las 6h. Dejamos margen para que el upload
-    # de artifacts termine bien.
-    timeout-minutes: 350
+    # Cap de seguridad del job — no es la duración real (la controla
+    # total_years). GitHub mata cualquier job a las 6h como máximo.
+    timeout-minutes: 240
     strategy:
       # No cancelar el otro seed si uno falla.
       fail-fast: false
@@ -47,19 +65,30 @@ jobs:
       - name: Run simulation
         run: |
           mkdir -p outputs_seed${{ matrix.seed }}
-          python -u -m stoneplace.cli.run \
-            --synthetic-size ${{ github.event.inputs.world_width }} ${{ github.event.inputs.world_height }} \
-            --seed ${{ matrix.seed }} \
-            --phase1-years ${{ github.event.inputs.phase1_years }} \
-            --total-years ${{ github.event.inputs.total_years }} \
-            --telemetry-every 10 \
-            --speciation-every 50 \
-            --founder-plant 500 \
-            --founder-fungi 400 \
-            --founder-animal 800 \
-            --max-pop-per-species ${{ github.event.inputs.max_pop_per_species }} \
-            --dump-every-snapshots 10 \
-            --out outputs_seed${{ matrix.seed }} \
+          ARGS=(
+            --seed ${{ matrix.seed }}
+            --phase1-years ${{ github.event.inputs.phase1_years }}
+            --total-years ${{ github.event.inputs.total_years }}
+            --telemetry-every 10
+            --speciation-every 50
+            --founder-plant ${{ github.event.inputs.founder_plant }}
+            --founder-fungi ${{ github.event.inputs.founder_fungi }}
+            --founder-animal ${{ github.event.inputs.founder_animal }}
+            --warn-pop-per-species ${{ github.event.inputs.warn_pop_per_species }}
+            --dump-every-snapshots 10
+            --out outputs_seed${{ matrix.seed }}
+          )
+          if [ -n "${{ github.event.inputs.world_bin }}" ]; then
+            ARGS+=(--world-bin "${{ github.event.inputs.world_bin }}" \
+                   --world-json "${{ github.event.inputs.world_json }}")
+          else
+            ARGS+=(--synthetic-size ${{ github.event.inputs.world_width }} ${{ github.event.inputs.world_height }})
+          fi
+          if [ -n "${{ github.event.inputs.perturbations_file }}" ]; then
+            ARGS+=(--perturbations-file "${{ github.event.inputs.perturbations_file }}")
+          fi
+          echo "python -m stoneplace.cli.run ${ARGS[@]}"
+          python -u -m stoneplace.cli.run "${ARGS[@]}" \
             2>&1 | tee outputs_seed${{ matrix.seed }}/run.log
 
       - name: Upload artifacts

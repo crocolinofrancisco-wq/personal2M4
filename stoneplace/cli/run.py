@@ -1,6 +1,7 @@
 """CLI: `python -m stoneplace.cli.run`."""
 from __future__ import annotations
 import argparse
+import json
 from ..simulator import Simulation, SimConfig
 
 
@@ -11,8 +12,7 @@ def main():
     p.add_argument("--world-json", default=None,
                    help="Ruta al .json DDG (opcional; sin él se genera un mundo sintético)")
     p.add_argument("--synthetic-size", type=int, nargs=2, default=(128, 64),
-                   metavar=("WIDTH", "HEIGHT"),
-                   help="Tamaño del mundo sintético si no se pasa raster")
+                   metavar=("WIDTH", "HEIGHT"))
     p.add_argument("--out", default="outputs")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--phase1-years", type=int, default=200)
@@ -25,11 +25,25 @@ def main():
     p.add_argument("--mutation-rate", type=float, default=5e-4)
     p.add_argument("--mutation-sigma", type=float, default=2.5)
     p.add_argument("--env-sigma", type=float, default=8.0)
-    p.add_argument("--max-pop-per-species", type=int, default=300_000,
-                   help="Tope duro por especie (thinning aleatorio si se supera)")
-    p.add_argument("--dump-every-snapshots", type=int, default=20,
-                   help="Volcar telemetría a disco cada N snapshots")
+    p.add_argument("--warn-pop-per-species", type=int, default=500_000,
+                   help="v1.5: warning si una especie supera este N (sin cap duro).")
+    p.add_argument("--dump-every-snapshots", type=int, default=20)
+    # v1.5
+    p.add_argument("--climate-disabled", action="store_true",
+                   help="Deshabilita ciclos Milankovitch/estacionales (mundo estático)")
+    p.add_argument("--milankovitch-period", type=float, default=40_000.0)
+    p.add_argument("--milankovitch-amp", type=float, default=3.0)
+    p.add_argument("--seasonal-amp", type=float, default=4.0)
+    p.add_argument("--snapshot-every", type=int, default=0,
+                   help="PNG del mundo cada N años (0 = deshabilitado)")
+    p.add_argument("--perturbations-file", default=None,
+                   help="JSON con lista de eventos catastróficos")
     args = p.parse_args()
+
+    perturbation_events = []
+    if args.perturbations_file:
+        perturbation_events = json.loads(
+            open(args.perturbations_file).read())
 
     cfg = SimConfig(
         world_bin=args.world_bin,
@@ -47,8 +61,14 @@ def main():
         mutation_rate=args.mutation_rate,
         mutation_sigma=args.mutation_sigma,
         env_sigma=args.env_sigma,
-        max_pop_per_species=args.max_pop_per_species,
+        warn_pop_per_species=args.warn_pop_per_species,
         dump_every_snapshots=args.dump_every_snapshots,
+        climate_enabled=not args.climate_disabled,
+        milankovitch_period_years=args.milankovitch_period,
+        milankovitch_amplitude_c=args.milankovitch_amp,
+        seasonal_amplitude_c=args.seasonal_amp,
+        snapshot_every=args.snapshot_every,
+        perturbation_events=perturbation_events,
     )
     Simulation(cfg).run()
 

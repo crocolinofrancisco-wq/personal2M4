@@ -8,6 +8,12 @@ venv/
 # Outputs de simulación (regenerables)
 outputs_smoke*/
 
-# Data raster local
-data/
+# Data raster local (mundos DDG grandes, no versionar)
+data/*
 *.bin
+# Excepción: muestras reales chicas usadas para tests/CI (~100KB).
+# Nota: un directorio padre completamente ignorado ("data/") no se puede
+# designorar por archivo — por eso arriba usamos "data/*" en vez de "data/".
+!data/samples/
+!data/samples/*.bin
+!data/samples/*.json

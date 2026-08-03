@@ -1,0 +1,390 @@
+{
+  "format": "ddg-world-layers/1",
+  "seed": 153336128,
+  "width": 100,
+  "height": 64,
+  "projection": "equirectangular",
+  "seamless": true,
+  "planetRadiusKm": 6371,
+  "kmPerPixel": 400.30173592041143,
+  "seaLevelNorm": 0.5,
+  "ageMa": 0,
+  "worldMode": "continents",
+  "note": "Mundo prebiótico: no hay biomas. El sustrato y la fertilidad son la base sobre la que sembrar vida.",
+  "materials": [
+    {
+      "id": 0,
+      "name": "Océano abisal",
+      "color": [
+        22,
+        54,
+        98
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Océano",
+      "color": [
+        26,
+        66,
+        116
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Plataforma continental",
+      "color": [
+        48,
+        116,
+        168
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Fosa oceánica",
+      "color": [
+        12,
+        30,
+        64
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Dorsal basáltica joven",
+      "color": [
+        38,
+        88,
+        132
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Arena de playa",
+      "color": [
+        224,
+        210,
+        164
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Grava y cantos costeros",
+      "color": [
+        152,
+        146,
+        136
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Roca desnuda (afloramiento)",
+      "color": [
+        126,
+        122,
+        116
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Basalto / roca ígnea",
+      "color": [
+        74,
+        70,
+        74
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Escudo granítico",
+      "color": [
+        168,
+        152,
+        138
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Roca sedimentaria",
+      "color": [
+        180,
+        160,
+        126
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Derrubios de ladera",
+      "color": [
+        142,
+        132,
+        120
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Grava fluvial",
+      "color": [
+        174,
+        166,
+        150
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Limo aluvial",
+      "color": [
+        148,
+        124,
+        84
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Arcilla de cuenca",
+      "color": [
+        118,
+        102,
+        82
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Arena eólica (dunas)",
+      "color": [
+        216,
+        184,
+        126
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Loess",
+      "color": [
+        192,
+        170,
+        126
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Till glaciar",
+      "color": [
+        144,
+        140,
+        130
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Hielo glaciar",
+      "color": [
+        236,
+        242,
+        250
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Evaporitas / salar",
+      "color": [
+        234,
+        230,
+        216
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Costra ferruginosa (BIF)",
+      "color": [
+        152,
+        86,
+        56
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Tefra volcánica",
+      "color": [
+        88,
+        80,
+        76
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Sustrato mineral",
+      "color": [
+        112,
+        98,
+        74
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Río",
+      "color": [
+        70,
+        140,
+        200
+      ]
+    }
+  ],
+  "weatheringRegimes": [
+    {
+      "id": 0,
+      "name": "Glaciar"
+    },
+    {
+      "id": 1,
+      "name": "Periglaciar (gelifracción)"
+    },
+    {
+      "id": 2,
+      "name": "Mecánica en clima árido"
+    },
+    {
+      "id": 3,
+      "name": "Química moderada"
+    },
+    {
+      "id": 4,
+      "name": "Química intensa (lixiviación)"
+    },
+    {
+      "id": 5,
+      "name": "Meteorización débil"
+    }
+  ],
+  "orogenTypes": {
+    "0": "ninguno",
+    "1": "colisión continental",
+    "2": "orógeno andino",
+    "3": "fosa",
+    "4": "arco insular",
+    "5": "fosa de arco",
+    "6": "rift",
+    "7": "dorsal",
+    "8": "transformante",
+    "9": "orógeno antiguo"
+  },
+  "layers": [
+    {
+      "name": "elevation",
+      "dtype": "int16",
+      "offset": 0,
+      "bytes": 12800,
+      "scale": 1,
+      "description": "Altitud sobre el nivel del mar",
+      "units": "m"
+    },
+    {
+      "name": "temperature",
+      "dtype": "int16",
+      "offset": 12800,
+      "bytes": 12800,
+      "scale": 0.1,
+      "description": "Temperatura media anual",
+      "units": "°C"
+    },
+    {
+      "name": "slope",
+      "dtype": "uint16",
+      "offset": 25600,
+      "bytes": 12800,
+      "scale": 1,
+      "description": "Pendiente local",
+      "units": "m/km"
+    },
+    {
+      "name": "rainfall",
+      "dtype": "uint8",
+      "offset": 38400,
+      "bytes": 6400,
+      "scale": 0.00392156862745098,
+      "description": "Precipitación relativa",
+      "units": "0-1"
+    },
+    {
+      "name": "humidity",
+      "dtype": "uint8",
+      "offset": 44800,
+      "bytes": 6400,
+      "scale": 0.00392156862745098,
+      "description": "Humedad relativa",
+      "units": "0-1"
+    },
+    {
+      "name": "fertility",
+      "dtype": "uint8",
+      "offset": 51200,
+      "bytes": 6400,
+      "scale": 0.004705882352941176,
+      "description": "Fertilidad mineral (sin materia orgánica)",
+      "units": "0-1.2"
+    },
+    {
+      "name": "soilDepth",
+      "dtype": "uint8",
+      "offset": 57600,
+      "bytes": 6400,
+      "scale": 0.01647058823529412,
+      "description": "Espesor de regolito",
+      "units": "m"
+    },
+    {
+      "name": "riverFlow",
+      "dtype": "uint8",
+      "offset": 64000,
+      "bytes": 6400,
+      "scale": 0.00392156862745098,
+      "description": "Caudal fluvial normalizado",
+      "units": "0-1"
+    },
+    {
+      "name": "crustThickness",
+      "dtype": "uint8",
+      "offset": 70400,
+      "bytes": 6400,
+      "scale": 0.007450980392156863,
+      "description": "Espesor de corteza (0.44=plataforma, 0.52=nivel del mar)",
+      "units": "rel"
+    },
+    {
+      "name": "material",
+      "dtype": "uint8",
+      "offset": 76800,
+      "bytes": 6400,
+      "scale": 1,
+      "description": "Índice en la tabla materials",
+      "units": "id"
+    },
+    {
+      "name": "weathering",
+      "dtype": "uint8",
+      "offset": 83200,
+      "bytes": 6400,
+      "scale": 1,
+      "description": "Régimen morfogenético (Peltier)",
+      "units": "id"
+    },
+    {
+      "name": "plate",
+      "dtype": "int16",
+      "offset": 89600,
+      "bytes": 12800,
+      "scale": 1,
+      "description": "Placa tectónica",
+      "units": "id"
+    },
+    {
+      "name": "orogenType",
+      "dtype": "uint8",
+      "offset": 102400,
+      "bytes": 6400,
+      "scale": 1,
+      "description": "Tipo de frontera dominante",
+      "units": "id"
+    }
+  ],
+  "totalBytes": 108800
+}

@@ -1,0 +1,8 @@
+[
+  {
+    "kind": "glaciation",
+    "at_year": 300,
+    "duration_years": 150,
+    "params": {"delta_c": -9, "y_top": 0, "y_bottom": 13}
+  }
+]
