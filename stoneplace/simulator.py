@@ -23,7 +23,7 @@ from .genetics.genome import new_founder_population
 from .ecology.microfauna import (MicrofaunaField, carrying_capacity,
                                   logistic_step)
 from .ecology.producers import biomass_field, meat_field, fish_field
-from .ecology.habitat import suitability
+from .ecology.habitat import suitability, _local_mean
 from .ecology.population import age_and_die, reproduce, _build_density
 from .ecology.dispersal import animal_walk, disperse_seeds
 from .ecology.speciation import try_speciate
@@ -180,13 +180,27 @@ class Simulation:
         plant_b = biomass_field(self.pops, self.world, "plantae")
         fungi_b = biomass_field(self.pops, self.world, "fungi")
         K = carrying_capacity(self.world, self.biome_map, plant_b, fungi_b)
-        logistic_step(self.micro, K, r=0.4, dt_years=dt)
+        # r=2.5: regeneración rápida de bugs/microbios (antes se pasaba 0.4
+        # explícito acá, así que el default subido en microfauna.py nunca
+        # llegaba a aplicarse de verdad).
+        logistic_step(self.micro, K, r=2.5, dt_years=dt)
 
         micro_dict = self.micro.as_dict()
         micro_dict["plant_biomass"] = plant_b
         micro_dict["fungi_biomass"] = fungi_b
         micro_dict["meat_biomass"] = meat_field(self.pops, self.world)
         micro_dict["fish_biomass"] = fish_field(self.pops, self.world)
+        # Forrajeo local (kernel 5x5) precomputado UNA vez por tick: antes
+        # `suitability()` lo recalculaba en cada llamada (~11 veces por
+        # especie animal por tick vía animal_walk/reproduce/age_and_die),
+        # y el campo de comida no cambia dentro del mismo tick. En un
+        # mundo grande esto era el costo dominante del ciclo.
+        micro_dict["bugs_local"] = _local_mean(micro_dict["bugs"], radius=2)
+        micro_dict["meat_local"] = _local_mean(micro_dict["meat_biomass"], radius=2)
+        micro_dict["plant_local"] = _local_mean(micro_dict["plant_biomass"], radius=2)
+        micro_dict["fish_local"] = _local_mean(micro_dict["fish_biomass"], radius=2)
+        micro_dict["micro_local"] = _local_mean(
+            micro_dict["microbes"] * 0.5 + micro_dict["plankton"] * 0.5, radius=2)
 
         new_pops = []
         for pop in self.pops:

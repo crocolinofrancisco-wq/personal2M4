@@ -95,11 +95,21 @@ def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:
         ], axis=1)
         diet = diet / np.maximum(diet.sum(axis=1, keepdims=True), 1e-6)
 
-        bugs_l = _local_mean(micro_dict["bugs"], radius=2)
-        meat_l = _local_mean(micro_dict.get("meat_biomass", micro_dict["bugs"]), radius=2)
-        plant_l = _local_mean(micro_dict.get("plant_biomass", micro_dict["detritus"]), radius=2)
-        fish_l = _local_mean(micro_dict.get("fish_biomass", micro_dict["plankton"]), radius=2)
-        micro_l = _local_mean(micro_dict["microbes"] * 0.5 + micro_dict["plankton"] * 0.5, radius=2)
+        # Preferir los campos ya promediados por el simulador (una vez por
+        # tick); si no están (p.ej. tests que llaman suitability directo),
+        # calcularlos al vuelo como fallback.
+        if "bugs_local" in micro_dict:
+            bugs_l = micro_dict["bugs_local"]
+            meat_l = micro_dict["meat_local"]
+            plant_l = micro_dict["plant_local"]
+            fish_l = micro_dict["fish_local"]
+            micro_l = micro_dict["micro_local"]
+        else:
+            bugs_l = _local_mean(micro_dict["bugs"], radius=2)
+            meat_l = _local_mean(micro_dict.get("meat_biomass", micro_dict["bugs"]), radius=2)
+            plant_l = _local_mean(micro_dict.get("plant_biomass", micro_dict["detritus"]), radius=2)
+            fish_l = _local_mean(micro_dict.get("fish_biomass", micro_dict["plankton"]), radius=2)
+            micro_l = _local_mean(micro_dict["microbes"] * 0.5 + micro_dict["plankton"] * 0.5, radius=2)
 
         food_sources = np.stack([
             bugs_l[y, x], meat_l[y, x], plant_l[y, x],
