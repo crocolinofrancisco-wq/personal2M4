@@ -40,6 +40,26 @@ def _local_mean(field: np.ndarray, radius: int = 2) -> np.ndarray:
     return acc / max(count, 1)
 
 
+def _ecological_release(pop, current_year: float | None) -> float:
+    """Bonus a `f_food` para fundadores recientes (< 80 años).
+
+    Justificación biológica: cuando una especie coloniza un nicho, hay una
+    fase inicial de "ecological release" antes de que la competencia
+    interespecífica se equilibre. Aquí lo modelamos como un multiplicador
+    de 1.5× que decae linealmente a 1.0× a los 80 años desde `born_at`.
+
+    Evita que Yi qi (y otros fundadores animales) se extingan en el
+    período crítico post-seed, cuando la selección disruptiva y la
+    variabilidad mutacional pueden dar dinámicas caóticas.
+    """
+    if current_year is None:
+        return 1.0
+    age = current_year - pop.template.born_at
+    if age >= 80.0:
+        return 1.0
+    return float(1.0 + 0.5 * (1.0 - age / 80.0))
+
+
 def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:
     """Devuelve un array (N,) con la idoneidad 0..1 de cada individuo."""
     if pop.n == 0:
@@ -137,6 +157,10 @@ def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:
         raw_food = (diet * food_sources).sum(axis=1) * 1.5 + 0.1
         # v1.5.1 — aplicar los dos bonos disruptivos
         raw_food = raw_food * specialist_bonus * divergent_bonus
+        # v1.5.3 — ecological release para especies jóvenes
+        current_year = micro_dict.get("_current_year")
+        release_mult = _ecological_release(pop, current_year)
+        raw_food = raw_food * release_mult
         # v1.5 (N8): distribución libre ideal — la comida por individuo
         # se diluye con la densidad LOCAL de la propia especie. Antes,
         # animal_walk atraía a todos al mismo pico → aglomeración.

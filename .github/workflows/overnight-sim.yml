@@ -5,7 +5,7 @@ on:
     inputs:
       total_years:
         description: "Años del mundo a simular"
-        default: "1200"
+        default: "10000"
       phase1_years:
         description: "Años sólo con plantas/hongos antes de soltar fauna"
         default: "150"
@@ -17,16 +17,16 @@ on:
         default: "200"
       speciation_every:
         description: "Chequeo de especiación cada N años"
-        default: "25"
+        default: "50"
       mutation_rate:
-        description: "Tasa de mutación por locus (default v1.5.1 = 1.2e-3)"
-        default: "1.2e-3"
+        description: "Tasa de mutación por locus (default v1.5.3 = 1.0e-3)"
+        default: "1.0e-3"
       seeds:
         description: "Lista JSON de seeds a correr en paralelo (matriz)"
         default: "[1, 2]"
       snapshot_every:
         description: "PNG del mundo cada N años (0 = deshabilitado)"
-        default: "200"
+        default: "500"
       perturbations_file:
         description: "JSON con perturbaciones (ruta relativa al repo, vacío = ninguna)"
         default: "examples/glaciation_year_500.json"
@@ -75,9 +75,9 @@ jobs:
             --total-years ${{ github.event.inputs.total_years }} \
             --telemetry-every 10 \
             --speciation-every ${{ github.event.inputs.speciation_every }} \
-            --founder-plant 500 \
-            --founder-fungi 400 \
-            --founder-animal 800 \
+            --founder-plant 600 \
+            --founder-fungi 500 \
+            --founder-animal 1500 \
             --mutation-rate ${{ github.event.inputs.mutation_rate }} \
             --snapshot-every ${{ github.event.inputs.snapshot_every }} \
             --dump-every-snapshots 10 \

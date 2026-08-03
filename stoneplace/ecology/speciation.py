@@ -142,6 +142,9 @@ def _pick_best_split(X: np.ndarray, rng, k_max: int = 4):
 # ---------------------------------------------------------------------------
 # API principal
 # ---------------------------------------------------------------------------
+MIN_SPECIES_AGE_FOR_SPECIATION = 150.0
+
+
 def try_speciate(pop: SpeciesPopulation, world, current_year: float,
                  rng, state: SpeciationState,
                  seed_master: int = 0) -> list[SpeciesPopulation]:
@@ -153,6 +156,12 @@ def try_speciate(pop: SpeciesPopulation, world, current_year: float,
     adaptativa.
     """
     if pop.n < 60:
+        return []
+    # v1.5.3 — no partir especies muy jóvenes. Los fundadores necesitan
+    # tiempo para establecerse antes de que la selección disruptiva pueda
+    # partirlos. Sin este gate, especies como Yi qi (recién sembradas)
+    # podían sufrir splits precoces sobre variantes ruidosas.
+    if current_year - pop.template.born_at < MIN_SPECIES_AGE_FOR_SPECIATION:
         return []
     additive = pop.genome.additive()
     # v1.5.1 — feature vector combinado: LOCI + COORDS + ECOMORFO.

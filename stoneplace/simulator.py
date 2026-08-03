@@ -55,11 +55,10 @@ class SimConfig:
     out_dir: str = "outputs"
     seed: int = 42
     dt_years: float = 1.0
-    # v1.5.1 — mutation_rate 3× (5e-4 → 1.5e-3). Ratio suficiente para que
-    # rasgos como salt_tolerance o intelligence deriven ~10 puntos en
-    # 500-1000 años sin sobrepasar la carga de mutación deletérea que
-    # extingue fundadores pequeños. σ mutacional sigue en 2.5.
-    mutation_rate: float = 1.2e-3
+    # v1.5.3 — mutation_rate 2× (5e-4 → 1.0e-3). Bajamos ligeramente para
+    # aliviar la carga en fundadores animales; la evolución sigue siendo
+    # 2× más rápida que en v1.5.0 pero menos brusca. σ mutacional 2.5.
+    mutation_rate: float = 1.0e-3
     mutation_sigma: float = 2.5
     env_sigma: float = 8.0
     speciation_every: int = 25
@@ -268,6 +267,9 @@ class Simulation:
         micro_dict["fish_local"] = _local_mean(micro_dict["fish_biomass"], radius=2)
         micro_dict["micro_local"] = _local_mean(
             micro_dict["microbes"] * 0.5 + micro_dict["plankton"] * 0.5, radius=2)
+
+        # v1.5.3 — pasar year a habitat.suitability para ecological release
+        micro_dict["_current_year"] = float(self.year)
 
         # v1.5 (N8): densidad local por especie para IFD en habitat.suitability
         for pop in self.pops:

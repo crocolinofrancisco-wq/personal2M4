@@ -73,7 +73,7 @@ def _ecomorph_vector(pop: "SpeciesPopulation", idx) -> np.ndarray:
 def _assortative_choice(pop, mother_idx, males, rng,
                          alpha_assort: float = 2.5,
                          assort_p: float = 0.55,
-                         min_pop_for_assort: int = 300) -> np.ndarray:
+                         min_pop_for_assort: int = 500) -> np.ndarray:
     """Elige un padre por cada madre con sesgo por similitud fenotípica.
 
     - Con probabilidad `assort_p` la hembra usa apareamiento asortativo:
