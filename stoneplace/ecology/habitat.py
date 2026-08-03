@@ -41,23 +41,22 @@ def _local_mean(field: np.ndarray, radius: int = 2) -> np.ndarray:
 
 
 def _ecological_release(pop, current_year: float | None) -> float:
-    """Bonus a `f_food` para fundadores recientes (< 80 años).
+    """Bonus a `f_food` para fundadores recientes (< 200 años).
 
-    Justificación biológica: cuando una especie coloniza un nicho, hay una
-    fase inicial de "ecological release" antes de que la competencia
-    interespecífica se equilibre. Aquí lo modelamos como un multiplicador
-    de 1.5× que decae linealmente a 1.0× a los 80 años desde `born_at`.
+    v1.5.4 — bonus MÁS FUERTE y MÁS LARGO: 2.0× al año 0, decae a 1.0×
+    al año 200 desde `born_at`. Los fundadores tienen mucho margen para
+    establecerse antes de enfrentar la competencia interespecífica plena.
 
-    Evita que Yi qi (y otros fundadores animales) se extingan en el
-    período crítico post-seed, cuando la selección disruptiva y la
-    variabilidad mutacional pueden dar dinámicas caóticas.
+    Justificación biológica: la colonización real de un nicho vacío
+    (Serina, radiación de finches en Galápagos) tiene una fase de release
+    de siglos porque los competidores tardan en co-evolucionar.
     """
     if current_year is None:
         return 1.0
     age = current_year - pop.template.born_at
-    if age >= 80.0:
+    if age >= 200.0:
         return 1.0
-    return float(1.0 + 0.5 * (1.0 - age / 80.0))
+    return float(1.0 + 1.0 * (1.0 - age / 200.0))
 
 
 def suitability(pop, world, biome_map, micro_dict) -> np.ndarray:

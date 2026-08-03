@@ -21,7 +21,19 @@ def age_and_die(pop: SpeciesPopulation, world, biome_map, micro_dict,
     p_old = 1.0 - np.exp(-dt_years / life)
 
     suit = suitability(pop, world, biome_map, micro_dict)
-    p_unfit = clip01(0.25 * dt_years * (1.0 - suit) ** 2)
+    p_unfit_raw = 0.25 * dt_years * (1.0 - suit) ** 2
+    # v1.5.4 — floor de p_unfit para fundadores. Durante los primeros
+    # 100 años de una especie, la mortalidad por hábitat imperfecto se
+    # capea al 3%/año. Refleja "founder effect protection": las especies
+    # colonizan lugares heterogéneos y toleran suboptimalidad temporal
+    # mientras se adaptan. Sin este cap, un suit=0.3 en fundadores da
+    # p_unfit=0.12 → 12% muerte/año → extinción segura.
+    current_year = micro_dict.get("_current_year")
+    if current_year is not None:
+        age = current_year - pop.template.born_at
+        if age < 100.0:
+            p_unfit_raw = np.minimum(p_unfit_raw, 0.03 * dt_years)
+    p_unfit = clip01(p_unfit_raw)
 
     metab_cost = clip01(pop.phenotype["basal_metabolism"] / 8000.0) * dt_years
     pop.energy = clip01(pop.energy - metab_cost + np.sqrt(np.maximum(suit, 0.0)) * dt_years * 0.5)

@@ -296,8 +296,14 @@ class Simulation:
             if pop.template.kingdom == "chordata":
                 animal_walk(pop, self.world, self.biome_map, micro_dict, self.rng)
 
+            # v1.5.4 — chordata usa 0.6× de la mutación base. La fauna
+            # es más frágil que flora/fungi (mucha vida útil, pocos
+            # descendientes) y sufre más carga de mutación. Reducir su
+            # tasa evita que fundadores como Yi qi acumulen letales
+            # antes de establecerse.
+            mu_eff = self.cfg.mutation_rate * (0.6 if pop.template.kingdom == "chordata" else 1.0)
             result = reproduce(pop, self.world, self.biome_map, micro_dict,
-                               dt_years=dt, mu=self.cfg.mutation_rate,
+                               dt_years=dt, mu=mu_eff,
                                sigma_mut=self.cfg.mutation_sigma, rng=self.rng)
             if result is not None:
                 child_genome, mother_idx = result
