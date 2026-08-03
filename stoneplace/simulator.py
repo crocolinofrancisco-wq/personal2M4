@@ -376,7 +376,8 @@ class Simulation:
         # Telemetría
         if int(self.year) % self.cfg.telemetry_every == 0:
             row = self.telemetry.snapshot(self.year, self.pops, self.biome_map,
-                                          speciation_state=self.speciation_state)
+                                          speciation_state=self.speciation_state,
+                                          narrative=self.narrative)
             print(f"  año {self.year:>5.0f} | especies vivas: "
                   f"{row['species_alive']:>3} | población total: "
                   f"{row['total_pop']:>7}", flush=True)

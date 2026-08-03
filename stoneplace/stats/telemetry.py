@@ -22,13 +22,24 @@ class Telemetry:
         self.rows: list[dict] = []
 
     def snapshot(self, year: float, pops, biome_map,
-                 speciation_state=None) -> dict:
+                 speciation_state=None, narrative=None) -> dict:
         row = {"year": year, "total_pop": 0, "species_alive": 0}
+        # v1.5.6 — imprimimos poblaciones bajas y detectamos extinciones
+        # explícitamente en el log (antes sólo veíamos "N especies vivas").
+        _watch = []
         for pop in pops:
             tpl = pop.template
             if pop.n == 0 and tpl.status == "alive":
                 tpl.status = "extinct"
                 tpl.extinct_at = year
+                msg = (f"    ✘ año {year:>5.0f}: EXTINCIÓN de "
+                       f"{tpl.scientific_name} (species_id={tpl.species_id})")
+                print(msg, flush=True)
+                if narrative is not None:
+                    narrative.log(year, "extinction", tpl.species_id,
+                                   f"Extinción de {tpl.scientific_name}.")
+            elif 0 < pop.n < 200:
+                _watch.append(f"{tpl.scientific_name}={pop.n}")
             if pop.n > 0:
                 row["species_alive"] += 1
                 row["total_pop"] += int(pop.n)
@@ -57,6 +68,8 @@ class Telemetry:
                 tpl.main_biomes = [BIOME_NAMES.get(int(i), str(int(i)))
                                     for i in main if counts[int(i)] > 0]
         self.rows.append(row)
+        if _watch:
+            print(f"    ⚠ watch (n<200): {', '.join(_watch)}", flush=True)
         return row
 
     def dump(self):

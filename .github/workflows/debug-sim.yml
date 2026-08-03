@@ -1,0 +1,74 @@
+name: Stoneplace debug run (corto)
+
+on:
+  workflow_dispatch:
+    inputs:
+      total_years:
+        description: "Años a simular (corto, para diagnóstico)"
+        default: "400"
+      seed:
+        description: "Seed único (no matriz)"
+        default: "1"
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Run short simulation with extinction logging
+        run: |
+          mkdir -p outputs_debug
+          python -u -m stoneplace.cli.run \
+            --synthetic-size 400 200 \
+            --seed ${{ github.event.inputs.seed }} \
+            --phase1-years 150 \
+            --total-years ${{ github.event.inputs.total_years }} \
+            --telemetry-every 5 \
+            --speciation-every 50 \
+            --founder-plant 600 \
+            --founder-fungi 500 \
+            --founder-animal 1500 \
+            --mutation-rate 1.0e-3 \
+            --snapshot-every 0 \
+            --dump-every-snapshots 20 \
+            --perturbations-file examples/glaciation_year_500.json \
+            --out outputs_debug \
+            2>&1 | tee outputs_debug/run.log
+
+      - name: Population trajectories per species
+        if: always()
+        run: |
+          python << 'PY'
+          import csv, pathlib
+          rows = list(csv.DictReader(open('outputs_debug/telemetry.csv')))
+          keys = [k for k in rows[0] if k.startswith('n_')]
+          print(f"Especies en telemetría: {keys}\n")
+          # Trayectoria: para cada especie, muestra n cada 20 años
+          for k in keys:
+              traj = [(int(float(r['year'])), int(r.get(k) or 0)) for r in rows]
+              # Detectar extinción
+              extinct_at = next((y for (y, n) in traj if n == 0), None)
+              # Pico
+              peak = max(n for (_, n) in traj)
+              # Muestra a intervalos
+              samples = traj[::4]
+              samples_str = ', '.join(f'y{y}:{n}' for (y, n) in samples[:20])
+              status = f"EXTINTA año {extinct_at}" if extinct_at else "viva"
+              print(f"{k}: pico={peak}, {status}")
+              print(f"  {samples_str}")
+              print()
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stoneplace-debug-seed-${{ github.event.inputs.seed }}
+          path: outputs_debug/
+          retention-days: 3
