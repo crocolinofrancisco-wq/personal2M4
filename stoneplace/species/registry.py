@@ -36,7 +36,13 @@ def yi_qi(rng, born_at: float = 0.0, n_loci: int = 64, map_rng=None) -> SpeciesT
         "temp_opt": 24.0, "temp_sigma": 8.0,
         "min_temp": 5, "max_temp": 38,
         "salt_tolerance": 2,
-        "diet_bias": {"bug": 55, "meat": 25, "vegetal": 5, "fish": 10, "micro": 5},
+        # v1.5.7 — rebalance realista basado en biología del clado
+        # Scansoriopterygidae: pequeño teropodo arborícola con dentición
+        # de insectívoro (Zhang et al. 2008, Nature). Se mueve por el
+        # dosel cazando insectos y ocasionalmente comiendo frutos. Fish
+        # bajo (arborícola, no acuático). Meat oportunista (5-10 %,
+        # pequeños vertebrados si aparecen). Sin veg dominante.
+        "diet_bias": {"bug": 70, "meat": 8, "vegetal": 12, "fish": 3, "micro": 7},
         # Yi qi: sensorial (vista, olfato), motor arborícola (climbing, flying).
         # NADA de bioluminiscencia / toxicidad / electric / fire — deben
         # desbloquearse por evolución si acaso, no venir de fábrica.
@@ -243,18 +249,112 @@ def pleurotus_ostreatus(rng, born_at: float = 0.0, n_loci: int = 48, map_rng=Non
     )
 
 
+def quercus_robur(rng, born_at: float = 0.0, n_loci: int = 56, map_rng=None) -> SpeciesTemplate:
+    """v1.5.7 — Roble común. Árbol de biomasa enorme en bosques templados
+    y hospedador de muchísima biomasa de insectos (>500 especies asociadas
+    en biología real). Reemplaza al nicho de bosque de biomasa alta que
+    dejó vacante el bambú retirado en v1.5.1.
+    """
+    hints = {
+        "mass_g_opt": 60000, "size_mm_opt": 25000,
+        "temp_opt": 12.0, "temp_sigma": 8.0,
+        "min_temp": -10, "max_temp": 32,
+        "min_ph": 4.5, "max_ph": 7.5,
+        "salt_tolerance": 1,
+        "biomes_ok": {"bosque templado", "bosque boreal", "pradera templada"},
+        "life_expectancy": 400, "breeding_lapse": 5.0, "baby_quantity": 3000,
+        "photosynthesis": 88, "aquatic": False, "body_plan": "angiosperm_tree",
+        "seed_resistance_level": 30,
+        "attractiveness": 30,
+    }
+    return SpeciesTemplate(
+        species_id=_next_id(),
+        scientific_name="Quercus robur",
+        taxonomy=["Plantae", "Tracheophyta", "Magnoliopsida",
+                  "Fagales", "Fagaceae"],
+        kingdom="plantae",
+        parent=None, born_at=born_at,
+        n_loci=n_loci, n_chromosomes=12,
+        gp_map=flora_gpmap(n_loci, rng, is_fungi=False, hints=hints, map_rng=map_rng),
+        hints=hints,
+    )
+
+
+def sphagnum_sp(rng, born_at: float = 0.0, n_loci: int = 40, map_rng=None) -> SpeciesTemplate:
+    """v1.5.7 — Musgo Sphagnum. Cubre inmensas extensiones de biomas fríos
+    y húmedos (tundra, turberas, bosque boreal, costa). Provee biomasa
+    vegetal donde nada más crece → sostiene insectos en climas fríos.
+    """
+    hints = {
+        "mass_g_opt": 8, "size_mm_opt": 60,
+        "temp_opt": 5.0, "temp_sigma": 8.0,
+        "min_temp": -20, "max_temp": 22,
+        "min_ph": 3.5, "max_ph": 6.0,
+        "salt_tolerance": 1,
+        "biomes_ok": {"tundra", "bosque boreal", "costa", "pradera templada"},
+        "life_expectancy": 25, "breeding_lapse": 0.5, "baby_quantity": 8000,
+        "photosynthesis": 75, "aquatic": False, "body_plan": "bryophyte",
+        "seed_resistance_level": 92,          # esporas extremadamente ligeras
+        "water_storage_level": 85,
+        "overcrowd_tolerance": 90,
+    }
+    return SpeciesTemplate(
+        species_id=_next_id(),
+        scientific_name="Sphagnum sp.",
+        taxonomy=["Plantae", "Bryophyta", "Sphagnopsida",
+                  "Sphagnales", "Sphagnaceae"],
+        kingdom="plantae",
+        parent=None, born_at=born_at,
+        n_loci=n_loci, n_chromosomes=19,
+        gp_map=flora_gpmap(n_loci, rng, is_fungi=False, hints=hints, map_rng=map_rng),
+        hints=hints,
+    )
+
+
+def opuntia_ficus_indica(rng, born_at: float = 0.0, n_loci: int = 44, map_rng=None) -> SpeciesTemplate:
+    """v1.5.7 — Nopal. Cactus columnar que ocupa el nicho desértico —
+    biomas donde plantas normales no sobreviven. Su CAM y almacenamiento
+    hídrico permiten sostener bugs incluso en desierto.
+    """
+    hints = {
+        "mass_g_opt": 3000, "size_mm_opt": 2500,
+        "temp_opt": 28.0, "temp_sigma": 10.0,
+        "min_temp": 2, "max_temp": 48,
+        "min_ph": 6.0, "max_ph": 8.5,
+        "salt_tolerance": 6,
+        "biomes_ok": {"desierto", "sabana", "pradera templada"},
+        "life_expectancy": 80, "breeding_lapse": 2.0, "baby_quantity": 500,
+        "photosynthesis": 80, "aquatic": False, "body_plan": "cactus",
+        "seed_resistance_level": 60,
+        "water_storage_level": 95,            # CAM + tejido suculento
+        "fire_resistance_level": 40,
+    }
+    return SpeciesTemplate(
+        species_id=_next_id(),
+        scientific_name="Opuntia ficus-indica",
+        taxonomy=["Plantae", "Tracheophyta", "Magnoliopsida",
+                  "Caryophyllales", "Cactaceae"],
+        kingdom="plantae",
+        parent=None, born_at=born_at,
+        n_loci=n_loci, n_chromosomes=11,
+        gp_map=flora_gpmap(n_loci, rng, is_fungi=False, hints=hints, map_rng=map_rng),
+        hints=hints,
+    )
+
+
 def all_prototype_species(rng, map_rng=None) -> list[SpeciesTemplate]:
     """v1.5: si se pasa `map_rng`, cada especie recibe un RNG dedicado
     para construir su GPMap. Esto congela la disposición locus↔rasgo
     independientemente del orden de creación (N2).
     """
-    # v1.5.1 — Phyllostachys edulis (bambú) eliminado del set por defecto:
-    # su masa por individuo y su tasa de dispersión clonal lo hacían dominar
-    # el ecosistema en < 500 años, aplanando la selección. La factory sigue
-    # disponible por si se quiere añadir a mano.
-    factories = [poa_annua, helianthus_annuus,
-                 orchis_stoneplace, pleurotus_ostreatus, yi_qi,
-                 triops_longicaudatus]
+    # v1.5.1 — Phyllostachys edulis (bambú) eliminado del set por defecto.
+    # v1.5.7 — añadidos Quercus (bosque bulk), Sphagnum (frío/húmedo) y
+    # Opuntia (desierto) para enriquecer la cobertura vegetal y sostener
+    # más biomasa de insectos en biomas donde Yi qi puede llegar.
+    factories = [poa_annua, helianthus_annuus, orchis_stoneplace,
+                 quercus_robur, sphagnum_sp, opuntia_ficus_indica,
+                 pleurotus_ostreatus,
+                 yi_qi, triops_longicaudatus]
     out = []
     for i, fn in enumerate(factories):
         if map_rng is not None:

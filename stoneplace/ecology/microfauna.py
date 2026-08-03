@@ -60,14 +60,18 @@ def carrying_capacity(world, biomes: np.ndarray, plant_biomass: np.ndarray,
     salt = world.layers.get("water_salinity", np.zeros_like(temp))
     runoff = world.layers.get("runoff", np.zeros_like(temp)) / 800.0
 
-    # Bugs: sólo tierra emergida con vegetación y clima cálido-húmedo
-    temp_bugs = gaussian_tolerance(temp, 22.0, 12.0)
-    K_bugs = clip01(plant_biomass * 0.9 + fungi_biomass * 0.2) * temp_bugs * clip01(hum + 0.15)
+    # Bugs: sólo tierra emergida con vegetación y clima cálido-húmedo.
+    # v1.5.7 — pesos elevados: los insectos son la mayor biomasa animal
+    # real del planeta. sigma de temperatura amplia (16 vs 12) — hay bugs
+    # activos también en climas fríos (springtails, dipteros). Bosques
+    # nativos rebalanceados con Quercus como hospedador principal.
+    temp_bugs = gaussian_tolerance(temp, 22.0, 16.0)
+    K_bugs = clip01(plant_biomass * 1.4 + fungi_biomass * 0.35) * temp_bugs * clip01(hum + 0.25)
     K_bugs = np.where(water, 0.0, K_bugs)
-    # bosques/sabanas son más productores de insectos
     boost = np.isin(biomes, [TROPICAL_FOREST, SAVANNA, TEMPERATE_FOREST])
-    K_bugs = np.where(boost, K_bugs * 1.25, K_bugs)
-    K_bugs = np.where(np.isin(biomes, [DESERT, GLACIER, TUNDRA]), K_bugs * 0.15, K_bugs)
+    K_bugs = np.where(boost, K_bugs * 1.3, K_bugs)
+    K_bugs = np.where(np.isin(biomes, [DESERT, GLACIER]), K_bugs * 0.20, K_bugs)
+    K_bugs = np.where(np.isin(biomes, [TUNDRA]), K_bugs * 0.35, K_bugs)  # ya no tan hostil
 
     # Microbios: dependen del suelo (om + detritus latente)
     K_microbes = clip01(om * 0.9 + gaussian_tolerance(temp, 20.0, 15.0) * 0.4)

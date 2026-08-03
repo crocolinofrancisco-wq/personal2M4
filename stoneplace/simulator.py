@@ -163,6 +163,13 @@ class Simulation:
         return chosen[:, 0].astype(np.int32), chosen[:, 1].astype(np.int32)
 
     def _seed_species(self, tpl: SpeciesTemplate, n: int, seed_point=None):
+        # v1.5.7 — BUG CRÍTICO fix: los templates se crean al construir
+        # Simulation con born_at=0, pero la fauna se siembra en fase 2
+        # (año 150). Sin actualizar born_at, todas las protecciones para
+        # fundadores (suit floor, ecological release, sympatric age gate,
+        # p_unfit floor, etc.) creían que Yi qi tenía 150 años al nacer
+        # y no se aplicaban → masacre inmediata.
+        tpl.born_at = float(self.year)
         y, x = self._sample_positions_for(tpl, n, seed_point)
         if y.size == 0:
             print(f"  [!] no hay hábitat inicial para {tpl.scientific_name}")
