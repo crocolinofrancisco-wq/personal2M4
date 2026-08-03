@@ -36,6 +36,9 @@ class SpeciesTemplate:
     historic_population: int = 0
     max_population: int = 0
     main_biomes: list[str] = field(default_factory=list)
+    # v1.6 perf: si False, se saltan mutación, reexpresión y especiación
+    # para esta especie. Fenotipo se hereda del progenitor (clon exacto).
+    evolve: bool = True
 
 
 @dataclass

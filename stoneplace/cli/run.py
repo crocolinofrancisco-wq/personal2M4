@@ -2,17 +2,21 @@
 from __future__ import annotations
 import argparse
 import json
-from ..simulator import Simulation, SimConfig
+from ..simulator import (Simulation, SimConfig,
+                         _DEFAULT_WORLD_BIN, _DEFAULT_WORLD_JSON)
 
 
 def main():
     p = argparse.ArgumentParser("stoneplace")
-    p.add_argument("--world-bin", default=None,
-                   help="Ruta al .bin DDG (opcional; sin él se genera un mundo sintético)")
-    p.add_argument("--world-json", default=None,
-                   help="Ruta al .json DDG (opcional; sin él se genera un mundo sintético)")
+    p.add_argument("--world-bin", default=_DEFAULT_WORLD_BIN,
+                   help="Ruta al .bin DDG (por defecto: mapa real 768x384)")
+    p.add_argument("--world-json", default=_DEFAULT_WORLD_JSON,
+                   help="Ruta al .json DDG (por defecto: mapa real 768x384)")
+    p.add_argument("--synthetic", action="store_true",
+                   help="Fuerza mundo sintético en vez del mapa real.")
     p.add_argument("--synthetic-size", type=int, nargs=2, default=(128, 64),
                    metavar=("WIDTH", "HEIGHT"))
+    p.add_argument("--perf-log-every", type=int, default=25)
     p.add_argument("--out", default="outputs")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--phase1-years", type=int, default=200)
@@ -45,9 +49,11 @@ def main():
         perturbation_events = json.loads(
             open(args.perturbations_file).read())
 
+    world_bin = None if args.synthetic else args.world_bin
+    world_json = None if args.synthetic else args.world_json
     cfg = SimConfig(
-        world_bin=args.world_bin,
-        world_json=args.world_json,
+        world_bin=world_bin,
+        world_json=world_json,
         synthetic_size=tuple(args.synthetic_size),
         out_dir=args.out,
         seed=args.seed,
@@ -69,6 +75,7 @@ def main():
         seasonal_amplitude_c=args.seasonal_amp,
         snapshot_every=args.snapshot_every,
         perturbation_events=perturbation_events,
+        perf_log_every=args.perf_log_every,
     )
     Simulation(cfg).run()
 

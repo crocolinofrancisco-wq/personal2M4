@@ -62,28 +62,43 @@ def animal_walk(pop, world, biome_map, micro_dict, rng, step: int = 1):
     mobility = np.clip(0.25 + 0.5 * speed + 0.25 * np.maximum(fly, swim), 0.1, 1.0)
     moves_mask = rng.random(pop.n) < mobility
 
-    # Puntajes de las 9 celdas (incluyendo la propia)
-    scores = np.empty((pop.n, 9), dtype=np.float32)
-    ys = np.empty((pop.n, 9), dtype=np.int32)
-    xs = np.empty((pop.n, 9), dtype=np.int32)
+    # v1.6 perf: sólo evaluamos suitability de los que SÍ intentarán moverse.
+    active = np.where(moves_mask)[0]
+    if active.size == 0:
+        pop.y = orig_y; pop.x = orig_x
+        return
+    ys = np.empty((active.size, 9), dtype=np.int32)
+    xs = np.empty((active.size, 9), dtype=np.int32)
+    scores = np.empty((active.size, 9), dtype=np.float32)
+
+    # Snapshot de arrays originales del pop para restaurar tras suitability.
+    _orig_y_full = pop.y; _orig_x_full = pop.x
+    _orig_pheno = pop.phenotype
+    # Vista fenotípica restringida a los activos (evita reindexar dentro
+    # de suitability en cada iteración).
+    pop.phenotype = {k: v[active] for k, v in p.items()}
+    ay = orig_y[active]; ax = orig_x[active]
     k = 0
     for dy in (-step, 0, step):
         for dx in (-step, 0, step):
-            ny = (orig_y + dy) % h
-            nx = (orig_x + dx) % w
+            ny = (ay + dy) % h
+            nx = (ax + dx) % w
             pop.y = ny; pop.x = nx
             scores[:, k] = suitability(pop, world, biome_map, micro_dict)
             ys[:, k] = ny; xs[:, k] = nx
             k += 1
+    pop.phenotype = _orig_pheno
+    pop.y = _orig_y_full; pop.x = _orig_x_full
 
     choice = _biased_choice(scores, rng)
-    idx = np.arange(pop.n)
-    new_y = ys[idx, choice]
-    new_x = xs[idx, choice]
+    idx = np.arange(active.size)
+    picked_y = ys[idx, choice]
+    picked_x = xs[idx, choice]
 
-    # Los sedentarios se quedan donde estaban
-    new_y = np.where(moves_mask, new_y, orig_y)
-    new_x = np.where(moves_mask, new_x, orig_x)
+    new_y = orig_y.copy()
+    new_x = orig_x.copy()
+    new_y[active] = picked_y
+    new_x[active] = picked_x
 
     pop.y = new_y.astype(np.int32)
     pop.x = new_x.astype(np.int32)

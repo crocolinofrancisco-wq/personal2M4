@@ -1,0 +1,825 @@
+{
+  "format": "ddg-world-layers/1",
+  "seed": 619267880,
+  "width": 768,
+  "height": 384,
+  "projection": "equirectangular",
+  "seamless": true,
+  "planetRadiusKm": 6371,
+  "kmPerPixel": 52.122621864636905,
+  "seaLevelNorm": 0.505,
+  "ageMa": 0,
+  "worldMode": "continents",
+  "note": "Mundo prebiótico: no hay biomas. El sustrato y la fertilidad son la base sobre la que sembrar vida.",
+  "rootingDepthMaxM": 1.2,
+  "globalMeanRainMm": 1150,
+  "materials": [
+    {
+      "id": 0,
+      "name": "Océano abisal",
+      "color": [
+        22,
+        54,
+        98
+      ],
+      "texture": {
+        "sand": 0.45,
+        "silt": 0.35,
+        "clay": 0.2
+      }
+    },
+    {
+      "id": 1,
+      "name": "Océano",
+      "color": [
+        26,
+        66,
+        116
+      ],
+      "texture": {
+        "sand": 0.45,
+        "silt": 0.35,
+        "clay": 0.2
+      }
+    },
+    {
+      "id": 2,
+      "name": "Plataforma continental",
+      "color": [
+        48,
+        116,
+        168
+      ],
+      "texture": {
+        "sand": 0.45,
+        "silt": 0.35,
+        "clay": 0.2
+      }
+    },
+    {
+      "id": 3,
+      "name": "Fosa oceánica",
+      "color": [
+        12,
+        30,
+        64
+      ],
+      "texture": {
+        "sand": 0.45,
+        "silt": 0.35,
+        "clay": 0.2
+      }
+    },
+    {
+      "id": 4,
+      "name": "Dorsal basáltica joven",
+      "color": [
+        38,
+        88,
+        132
+      ],
+      "texture": {
+        "sand": 0.45,
+        "silt": 0.35,
+        "clay": 0.2
+      }
+    },
+    {
+      "id": 5,
+      "name": "Arena de playa",
+      "color": [
+        224,
+        210,
+        164
+      ],
+      "texture": {
+        "sand": 0.92,
+        "silt": 0.06,
+        "clay": 0.02
+      }
+    },
+    {
+      "id": 6,
+      "name": "Grava y cantos costeros",
+      "color": [
+        152,
+        146,
+        136
+      ],
+      "texture": {
+        "sand": 0.86,
+        "silt": 0.1,
+        "clay": 0.04
+      }
+    },
+    {
+      "id": 7,
+      "name": "Roca desnuda (afloramiento)",
+      "color": [
+        126,
+        122,
+        116
+      ],
+      "texture": {
+        "sand": 0.55,
+        "silt": 0.3,
+        "clay": 0.15
+      }
+    },
+    {
+      "id": 8,
+      "name": "Basalto / roca ígnea",
+      "color": [
+        74,
+        70,
+        74
+      ],
+      "texture": {
+        "sand": 0.38,
+        "silt": 0.34,
+        "clay": 0.28
+      }
+    },
+    {
+      "id": 9,
+      "name": "Escudo granítico",
+      "color": [
+        168,
+        152,
+        138
+      ],
+      "texture": {
+        "sand": 0.68,
+        "silt": 0.2,
+        "clay": 0.12
+      }
+    },
+    {
+      "id": 10,
+      "name": "Roca sedimentaria",
+      "color": [
+        180,
+        160,
+        126
+      ],
+      "texture": {
+        "sand": 0.4,
+        "silt": 0.38,
+        "clay": 0.22
+      }
+    },
+    {
+      "id": 11,
+      "name": "Derrubios de ladera",
+      "color": [
+        142,
+        132,
+        120
+      ],
+      "texture": {
+        "sand": 0.76,
+        "silt": 0.17,
+        "clay": 0.07
+      }
+    },
+    {
+      "id": 12,
+      "name": "Grava fluvial",
+      "color": [
+        174,
+        166,
+        150
+      ],
+      "texture": {
+        "sand": 0.82,
+        "silt": 0.14,
+        "clay": 0.04
+      }
+    },
+    {
+      "id": 13,
+      "name": "Limo aluvial",
+      "color": [
+        148,
+        124,
+        84
+      ],
+      "texture": {
+        "sand": 0.14,
+        "silt": 0.64,
+        "clay": 0.22
+      }
+    },
+    {
+      "id": 14,
+      "name": "Arcilla de cuenca",
+      "color": [
+        118,
+        102,
+        82
+      ],
+      "texture": {
+        "sand": 0.1,
+        "silt": 0.26,
+        "clay": 0.64
+      }
+    },
+    {
+      "id": 15,
+      "name": "Arena eólica (dunas)",
+      "color": [
+        216,
+        184,
+        126
+      ],
+      "texture": {
+        "sand": 0.95,
+        "silt": 0.04,
+        "clay": 0.01
+      }
+    },
+    {
+      "id": 16,
+      "name": "Loess",
+      "color": [
+        192,
+        170,
+        126
+      ],
+      "texture": {
+        "sand": 0.1,
+        "silt": 0.76,
+        "clay": 0.14
+      }
+    },
+    {
+      "id": 17,
+      "name": "Till glaciar",
+      "color": [
+        144,
+        140,
+        130
+      ],
+      "texture": {
+        "sand": 0.48,
+        "silt": 0.34,
+        "clay": 0.18
+      }
+    },
+    {
+      "id": 18,
+      "name": "Hielo glaciar",
+      "color": [
+        236,
+        242,
+        250
+      ],
+      "texture": {
+        "sand": 0.34,
+        "silt": 0.33,
+        "clay": 0.33
+      }
+    },
+    {
+      "id": 19,
+      "name": "Evaporitas / salar",
+      "color": [
+        234,
+        230,
+        216
+      ],
+      "texture": {
+        "sand": 0.3,
+        "silt": 0.42,
+        "clay": 0.28
+      }
+    },
+    {
+      "id": 20,
+      "name": "Costra ferruginosa (BIF)",
+      "color": [
+        152,
+        86,
+        56
+      ],
+      "texture": {
+        "sand": 0.28,
+        "silt": 0.34,
+        "clay": 0.38
+      }
+    },
+    {
+      "id": 21,
+      "name": "Tefra volcánica",
+      "color": [
+        88,
+        80,
+        76
+      ],
+      "texture": {
+        "sand": 0.32,
+        "silt": 0.46,
+        "clay": 0.22
+      }
+    },
+    {
+      "id": 22,
+      "name": "Sustrato mineral",
+      "color": [
+        112,
+        98,
+        74
+      ],
+      "texture": {
+        "sand": 0.38,
+        "silt": 0.38,
+        "clay": 0.24
+      }
+    },
+    {
+      "id": 23,
+      "name": "Río",
+      "color": [
+        70,
+        140,
+        200
+      ],
+      "texture": {
+        "sand": 0.6,
+        "silt": 0.3,
+        "clay": 0.1
+      }
+    },
+    {
+      "id": 24,
+      "name": "Lago",
+      "color": [
+        46,
+        100,
+        158
+      ],
+      "texture": {
+        "sand": 0.45,
+        "silt": 0.35,
+        "clay": 0.2
+      }
+    },
+    {
+      "id": 25,
+      "name": "Lago salado / playa",
+      "color": [
+        188,
+        196,
+        196
+      ],
+      "texture": {
+        "sand": 0.45,
+        "silt": 0.35,
+        "clay": 0.2
+      }
+    }
+  ],
+  "soilTypes": [
+    {
+      "id": 0,
+      "name": "Sin suelo (roca o hielo)",
+      "color": [
+        132,
+        130,
+        126
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Entisol (incipiente)",
+      "color": [
+        176,
+        160,
+        132
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Inceptisol (poco maduro)",
+      "color": [
+        152,
+        132,
+        96
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Aridisol (árido)",
+      "color": [
+        212,
+        180,
+        120
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Vertisol (arcilla expansiva)",
+      "color": [
+        92,
+        84,
+        72
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Andisol (volcánico)",
+      "color": [
+        70,
+        62,
+        58
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Oxisol / laterita",
+      "color": [
+        168,
+        80,
+        48
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Alfisol (templado fértil)",
+      "color": [
+        124,
+        96,
+        56
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Spodosol (podzol)",
+      "color": [
+        150,
+        146,
+        158
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Gelisol (permafrost)",
+      "color": [
+        186,
+        204,
+        216
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Histosol (turba)",
+      "color": [
+        54,
+        44,
+        36
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Fluvisol (aluvial)",
+      "color": [
+        140,
+        116,
+        72
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Solonchak (salino)",
+      "color": [
+        236,
+        232,
+        206
+      ]
+    }
+  ],
+  "oceanMeanSalinityPSU": 34.3,
+  "salinityClasses": {
+    "water": {
+      "fresh": "<0.5",
+      "brackish": "0.5-30",
+      "marine": "30-50",
+      "hypersaline": ">50"
+    },
+    "soil_dSm": {
+      "none": "<2",
+      "slight": "2-4",
+      "moderate": "4-8",
+      "strong": "8-16",
+      "extreme": ">16"
+    }
+  },
+  "hints": {
+    "seedWorld": "available_water y fertility son los limitantes principales. organic_matter parte de 0: hazla crecer hacia om_potential donde haya vegetación, y súmala a fertility y a porosity.",
+    "colonisable": "soilDepth<0.10 m o slope>170 m/km ⇒ roca desnuda: no colonizable hasta que la meteorización genere suelo.",
+    "salinity": "soil_salinity >4 dS/m limita a especies tolerantes y >8 dS/m a halófitas. water_salinity marca dónde puede vivir vida dulceacuícola frente a marina.",
+    "ph": "La mayoría de plantas van bien entre pH 5.5 y 7.5. Por debajo de 5 hay toxicidad por aluminio y por encima de 8.5 el fósforo queda bloqueado; fertility ya incorpora ese efecto."
+  },
+  "weatheringRegimes": [
+    {
+      "id": 0,
+      "name": "Glaciar"
+    },
+    {
+      "id": 1,
+      "name": "Periglaciar (gelifracción)"
+    },
+    {
+      "id": 2,
+      "name": "Mecánica en clima árido"
+    },
+    {
+      "id": 3,
+      "name": "Química moderada"
+    },
+    {
+      "id": 4,
+      "name": "Química intensa (lixiviación)"
+    },
+    {
+      "id": 5,
+      "name": "Meteorización débil"
+    }
+  ],
+  "orogenTypes": {
+    "0": "ninguno",
+    "1": "colisión continental",
+    "2": "orógeno andino",
+    "3": "fosa",
+    "4": "arco insular",
+    "5": "fosa de arco",
+    "6": "rift",
+    "7": "dorsal",
+    "8": "transformante",
+    "9": "orógeno antiguo"
+  },
+  "layers": [
+    {
+      "name": "elevation",
+      "dtype": "int16",
+      "offset": 0,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Altitud sobre el nivel del mar",
+      "units": "m"
+    },
+    {
+      "name": "temperature",
+      "dtype": "int16",
+      "offset": 589824,
+      "bytes": 589824,
+      "scale": 0.1,
+      "description": "Temperatura media anual",
+      "units": "°C"
+    },
+    {
+      "name": "slope",
+      "dtype": "uint16",
+      "offset": 1179648,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Pendiente local",
+      "units": "m/km"
+    },
+    {
+      "name": "rains",
+      "dtype": "uint16",
+      "offset": 1769472,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Precipitación media anual",
+      "units": "mm/año"
+    },
+    {
+      "name": "pet",
+      "dtype": "uint16",
+      "offset": 2359296,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Evapotranspiración potencial anual",
+      "units": "mm/año"
+    },
+    {
+      "name": "humidity",
+      "dtype": "uint8",
+      "offset": 2949120,
+      "bytes": 294912,
+      "scale": 0.00392156862745098,
+      "description": "Humedad atmosférica relativa",
+      "units": "0-1"
+    },
+    {
+      "name": "soilDepth",
+      "dtype": "uint8",
+      "offset": 3244032,
+      "bytes": 294912,
+      "scale": 0.0196078431372549,
+      "description": "Espesor del suelo (solum)",
+      "units": "m"
+    },
+    {
+      "name": "sand",
+      "dtype": "uint8",
+      "offset": 3538944,
+      "bytes": 294912,
+      "scale": 0.00392156862745098,
+      "description": "Fracción de arena",
+      "units": "0-1"
+    },
+    {
+      "name": "silt",
+      "dtype": "uint8",
+      "offset": 3833856,
+      "bytes": 294912,
+      "scale": 0.00392156862745098,
+      "description": "Fracción de limo",
+      "units": "0-1"
+    },
+    {
+      "name": "clay",
+      "dtype": "uint8",
+      "offset": 4128768,
+      "bytes": 294912,
+      "scale": 0.00392156862745098,
+      "description": "Fracción de arcilla",
+      "units": "0-1"
+    },
+    {
+      "name": "porosity",
+      "dtype": "uint8",
+      "offset": 4423680,
+      "bytes": 294912,
+      "scale": 0.00392156862745098,
+      "description": "Porosidad total del suelo",
+      "units": "0-1"
+    },
+    {
+      "name": "organic_matter",
+      "dtype": "uint8",
+      "offset": 4718592,
+      "bytes": 294912,
+      "scale": 0.00392156862745098,
+      "description": "Materia orgánica (0 en mundo prebiótico)",
+      "units": "0-1"
+    },
+    {
+      "name": "om_potential",
+      "dtype": "uint8",
+      "offset": 5013504,
+      "bytes": 294912,
+      "scale": 0.00392156862745098,
+      "description": "Humus de equilibrio alcanzable con vegetación",
+      "units": "0-1"
+    },
+    {
+      "name": "awc",
+      "dtype": "uint16",
+      "offset": 5308416,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Capacidad de agua útil del suelo (CC−PMP)×prof. radicular",
+      "units": "mm"
+    },
+    {
+      "name": "available_water",
+      "dtype": "uint16",
+      "offset": 5898240,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Agua realmente disponible para las plantas",
+      "units": "mm"
+    },
+    {
+      "name": "water_salinity",
+      "dtype": "uint16",
+      "offset": 6488064,
+      "bytes": 589824,
+      "scale": 0.1,
+      "description": "Salinidad del agua (0 en tierra firme)",
+      "units": "PSU (g/kg)"
+    },
+    {
+      "name": "soil_salinity",
+      "dtype": "uint16",
+      "offset": 7077888,
+      "bytes": 589824,
+      "scale": 0.1,
+      "description": "Salinidad del suelo (conductividad eléctrica)",
+      "units": "dS/m"
+    },
+    {
+      "name": "soil_ph",
+      "dtype": "uint8",
+      "offset": 7667712,
+      "bytes": 294912,
+      "scale": 0.05,
+      "description": "pH del suelo",
+      "units": "pH"
+    },
+    {
+      "name": "fertility",
+      "dtype": "uint8",
+      "offset": 7962624,
+      "bytes": 294912,
+      "scale": 0.005490196078431372,
+      "description": "Fertilidad (nutrientes × retención × pH × sales)",
+      "units": "0-1.4"
+    },
+    {
+      "name": "soil_type",
+      "dtype": "uint8",
+      "offset": 8257536,
+      "bytes": 294912,
+      "scale": 1,
+      "description": "Índice en la tabla soilTypes",
+      "units": "id"
+    },
+    {
+      "name": "riverFlow",
+      "dtype": "uint8",
+      "offset": 8552448,
+      "bytes": 294912,
+      "scale": 0.00392156862745098,
+      "description": "Caudal fluvial normalizado para dibujo",
+      "units": "0-1"
+    },
+    {
+      "name": "discharge",
+      "dtype": "uint16",
+      "offset": 8847360,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Caudal acumulado del río",
+      "units": "m³/s"
+    },
+    {
+      "name": "runoff",
+      "dtype": "uint16",
+      "offset": 9437184,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Escorrentía generada localmente (Budyko)",
+      "units": "mm/año"
+    },
+    {
+      "name": "lake_depth",
+      "dtype": "uint16",
+      "offset": 10027008,
+      "bytes": 589824,
+      "scale": 0.5,
+      "description": "Profundidad de lago (0 = no hay lago)",
+      "units": "m"
+    },
+    {
+      "name": "crustThickness",
+      "dtype": "uint8",
+      "offset": 10616832,
+      "bytes": 294912,
+      "scale": 0.007450980392156863,
+      "description": "Espesor de corteza (0.44=plataforma, 0.52=nivel del mar)",
+      "units": "rel"
+    },
+    {
+      "name": "material",
+      "dtype": "uint8",
+      "offset": 10911744,
+      "bytes": 294912,
+      "scale": 1,
+      "description": "Índice en la tabla materials",
+      "units": "id"
+    },
+    {
+      "name": "weathering",
+      "dtype": "uint8",
+      "offset": 11206656,
+      "bytes": 294912,
+      "scale": 1,
+      "description": "Régimen morfogenético (Peltier)",
+      "units": "id"
+    },
+    {
+      "name": "plate",
+      "dtype": "int16",
+      "offset": 11501568,
+      "bytes": 589824,
+      "scale": 1,
+      "description": "Placa tectónica",
+      "units": "id"
+    },
+    {
+      "name": "orogenType",
+      "dtype": "uint8",
+      "offset": 12091392,
+      "bytes": 294912,
+      "scale": 1,
+      "description": "Tipo de frontera dominante",
+      "units": "id"
+    }
+  ],
+  "totalBytes": 12386304
+}

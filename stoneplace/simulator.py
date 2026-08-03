@@ -45,6 +45,12 @@ from .stats.narrative import NarrativeLog
 from .ecology.climate import ClimateCycle
 from .ecology.perturbation import PerturbationSchedule
 from .utils import rng_from_seed
+import time
+from pathlib import Path as _Path
+_DEFAULT_WORLD_BIN = str(_Path(__file__).parent.parent
+                         / "data/samples/ddg_world_619267880_768x384_0Ma.bin")
+_DEFAULT_WORLD_JSON = str(_Path(__file__).parent.parent
+                          / "data/samples/ddg_world_619267880_768x384_0Ma.json")
 
 
 @dataclass
@@ -79,6 +85,8 @@ class SimConfig:
     snapshot_every: int = 0            # 0 = deshabilitado
     # Perturbaciones (impactos, glaciaciones)
     perturbation_events: list[dict] = field(default_factory=list)
+    # v1.6 perf
+    perf_log_every: int = 25
     # v1.5.4 — mundos DDG grandes: si la memoria por individuo escala mal,
     # el usuario puede topear founders en lugar de tocar el motor.
 
@@ -119,6 +127,8 @@ class Simulation:
         self.phylo = PhyloTree()
         self.narrative = NarrativeLog(cfg.out_dir)
         self.perturbations = PerturbationSchedule(cfg.perturbation_events)
+        # v1.6 telemetría de rendimiento (segundos por año, desgloses)
+        self.perf_rows: list[dict] = []
 
     # ------------------------------------------------------------------
     # Siembra
@@ -227,7 +237,14 @@ class Simulation:
     # ------------------------------------------------------------------
     def _step_one_year(self):
         dt = self.cfg.dt_years
+        _t_year_start = time.perf_counter()
+        _perf = {"climate": 0.0, "biomass": 0.0, "micro": 0.0, "density": 0.0,
+                 "walk": 0.0, "reproduce": 0.0, "die": 0.0, "consume": 0.0,
+                 "speciation": 0.0, "telemetry": 0.0}
+        def _tic():
+            return time.perf_counter()
 
+        _t = _tic()
         # v1.5 (N5): actualizamos temperatura respecto al baseline
         if self.climate.enabled:
             delta_t = self.climate.temperature_delta(self.year)
@@ -243,6 +260,7 @@ class Simulation:
                 and self.year > 0):
             self.biome_map = classify(self.world)
 
+        _perf["climate"] += time.perf_counter() - _t; _t = _tic()
         plant_target = biomass_field(self.pops, self.world, "plantae")
         fungi_target = biomass_field(self.pops, self.world, "fungi")
         self.plant_store.regenerate(plant_target, r=1.2, dt=dt)
@@ -250,6 +268,7 @@ class Simulation:
         plant_b = self.plant_store.biomass
         fungi_b = self.fungi_store.biomass
 
+        _perf["biomass"] += time.perf_counter() - _t; _t = _tic()
         K = carrying_capacity(self.world, self.biome_map, plant_b, fungi_b)
         logistic_step(self.micro, K, r=2.5, dt_years=dt)
 
@@ -265,11 +284,13 @@ class Simulation:
         micro_dict["micro_local"] = _local_mean(
             micro_dict["microbes"] * 0.5 + micro_dict["plankton"] * 0.5, radius=2)
 
+        _perf["micro"] += time.perf_counter() - _t; _t = _tic()
         # v1.5 (N8): densidad local por especie para IFD en habitat.suitability
         for pop in self.pops:
             if pop.n > 0:
                 d_local = _build_density(pop, self.world.shape).astype(np.float32)
                 micro_dict[f"density_{pop.template.species_id}"] = d_local
+        _perf["density"] += time.perf_counter() - _t
 
         new_pops = []
         reexpress_now = (int(self.year) % self.cfg.reexpress_every == 0
@@ -284,15 +305,22 @@ class Simulation:
                       f"> warn_pop_per_species={self.cfg.warn_pop_per_species}. "
                       f"La densodependencia debería frenarla; sin cap duro.")
 
-            if reexpress_now:
+            evolve = getattr(pop.template, "evolve", True)
+
+            if reexpress_now and evolve:
                 pop.express(self.rng, sigma_env=self.cfg.env_sigma)
 
             if pop.template.kingdom == "chordata":
+                _tw = _tic()
                 animal_walk(pop, self.world, self.biome_map, micro_dict, self.rng)
+                _perf["walk"] += time.perf_counter() - _tw
 
+            _tr = _tic()
+            mu = self.cfg.mutation_rate if evolve else 0.0
+            sig_mut = self.cfg.mutation_sigma if evolve else 0.0
             result = reproduce(pop, self.world, self.biome_map, micro_dict,
-                               dt_years=dt, mu=self.cfg.mutation_rate,
-                               sigma_mut=self.cfg.mutation_sigma, rng=self.rng)
+                               dt_years=dt, mu=mu,
+                               sigma_mut=sig_mut, rng=self.rng)
             if result is not None:
                 child_genome, mother_idx = result
                 cy = pop.y[mother_idx].copy()
@@ -300,33 +328,47 @@ class Simulation:
                 sigma = self._seed_sigma_for(pop)
                 cy, cx = disperse_seeds(cy, cx, self.world, self.rng,
                                          sigma_cells=sigma)
-                child_pop = SpeciesPopulation(
-                    template=pop.template,
-                    genome=child_genome,
-                    y=cy.astype(np.int32), x=cx.astype(np.int32),
-                    age_years=np.zeros(cy.size, dtype=np.float32),
-                    energy=np.full(cy.size, 0.6, dtype=np.float32),
-                    sex=(self.rng.integers(0, 2, size=cy.size).astype(np.int8)
-                         if pop.template.kingdom == "chordata" else None),
-                )
-                child_pop.express(self.rng, sigma_env=self.cfg.env_sigma)
+                # Concat directo, sin construir un SpeciesPopulation efímero.
                 pop.genome.alleles = np.concatenate([pop.genome.alleles,
-                                                    child_pop.genome.alleles])
-                pop.y = np.concatenate([pop.y, child_pop.y])
-                pop.x = np.concatenate([pop.x, child_pop.x])
-                pop.age_years = np.concatenate([pop.age_years, child_pop.age_years])
-                pop.energy = np.concatenate([pop.energy, child_pop.energy])
+                                                    child_genome.alleles])
+                pop.y = np.concatenate([pop.y, cy.astype(np.int32)])
+                pop.x = np.concatenate([pop.x, cx.astype(np.int32)])
+                pop.age_years = np.concatenate(
+                    [pop.age_years, np.zeros(cy.size, dtype=np.float32)])
+                pop.energy = np.concatenate(
+                    [pop.energy, np.full(cy.size, 0.6, dtype=np.float32)])
                 if pop.sex is not None:
-                    pop.sex = np.concatenate([pop.sex, child_pop.sex])
-                for k in pop.phenotype:
-                    pop.phenotype[k] = np.concatenate([pop.phenotype[k],
-                                                       child_pop.phenotype[k]])
+                    child_sex = self.rng.integers(
+                        0, 2, size=cy.size).astype(np.int8)
+                    pop.sex = np.concatenate([pop.sex, child_sex])
+                if evolve:
+                    # Reexpresar SOLO los hijos y concatenar.
+                    tmp = SpeciesPopulation(
+                        template=pop.template, genome=child_genome,
+                        y=cy, x=cx,
+                        age_years=np.zeros(cy.size, dtype=np.float32),
+                        energy=np.full(cy.size, 0.6, dtype=np.float32),
+                        sex=None,
+                    )
+                    tmp.express(self.rng, sigma_env=self.cfg.env_sigma)
+                    for k in pop.phenotype:
+                        pop.phenotype[k] = np.concatenate(
+                            [pop.phenotype[k], tmp.phenotype[k]])
+                else:
+                    # Fenotipo del hijo = fenotipo de la madre (mismo genotipo).
+                    for k in pop.phenotype:
+                        pop.phenotype[k] = np.concatenate(
+                            [pop.phenotype[k], pop.phenotype[k][mother_idx]])
+            _perf["reproduce"] += time.perf_counter() - _tr
 
+            _td = _tic()
             density = _build_density(pop, self.world.shape)
             age_and_die(pop, self.world, self.biome_map, micro_dict,
                         dt_years=dt, rng=self.rng, density_map=density)
+            _perf["die"] += time.perf_counter() - _td
 
             if pop.template.kingdom == "chordata" and pop.n > 0:
+                _tc = _tic()
                 mass_factor = np.clip(
                     (pop.phenotype["mass_g"] / 100.0) ** 0.75, 0.05, 20.0)
                 for cat, key in (("bug", "bugs"), ("micro", "microbes"),
@@ -341,10 +383,14 @@ class Simulation:
                 intake_veg = (pop.phenotype["diet_vegetal"] / 100.0
                               * mass_factor / CONSUMPTION_SCALE_KCAL * dt)
                 self.plant_store.consume(pop.y, pop.x, intake_veg)
+                _perf["consume"] += time.perf_counter() - _tc
 
         # Especiación periódica — k=2..4 con silhouette (N7)
+        _ts = _tic()
         if int(self.year) % self.cfg.speciation_every == 0 and self.year > 0:
             for pop in list(self.pops):
+                if not getattr(pop.template, "evolve", True):
+                    continue
                 children = try_speciate(pop, self.world, self.year, self.rng,
                                          self.speciation_state)
                 for child in children:
@@ -360,8 +406,10 @@ class Simulation:
                     print(f"    ✦ año {self.year:>5.0f}: especiación → "
                           f"{child.template.scientific_name}")
         self.pops.extend(new_pops)
+        _perf["speciation"] += time.perf_counter() - _ts
 
         # Telemetría
+        _tt = _tic()
         if int(self.year) % self.cfg.telemetry_every == 0:
             row = self.telemetry.snapshot(self.year, self.pops, self.biome_map,
                                           speciation_state=self.speciation_state)
@@ -374,6 +422,22 @@ class Simulation:
                 self.phylo.dump_newick(Path(self.cfg.out_dir) / "phylo.nwk")
                 self.narrative.dump()
 
+        _perf["telemetry"] += time.perf_counter() - _tt
+
+        # Registro de rendimiento
+        year_dt = time.perf_counter() - _t_year_start
+        perf_row = {"year": int(self.year), "wall_s": year_dt,
+                    "n_pops": sum(1 for p in self.pops if p.n > 0),
+                    "total_pop": sum(int(p.n) for p in self.pops), **_perf}
+        self.perf_rows.append(perf_row)
+        if (self.cfg.perf_log_every > 0
+                and int(self.year) % self.cfg.perf_log_every == 0
+                and self.year > 0):
+            top = sorted(((v, k) for k, v in _perf.items()), reverse=True)[:3]
+            top_str = ", ".join(f"{k}={v*1000:.0f}ms" for v, k in top)
+            print(f"  [perf] año {int(self.year):>5} | {year_dt*1000:.0f}ms | {top_str}",
+                  flush=True)
+
         # Snapshot PNG (opcional; matplotlib no bloquea si no está instalado)
         if self.cfg.snapshot_every > 0 and int(self.year) % self.cfg.snapshot_every == 0:
             try:
@@ -385,6 +449,7 @@ class Simulation:
         self.year += dt
 
     def run(self):
+        t0 = time.perf_counter()
         self.seed_phase1()
         while self.year < self.cfg.phase1_years:
             self._step_one_year()
@@ -395,9 +460,20 @@ class Simulation:
         self.telemetry.dump_species_cards(self.pops)
         self.phylo.dump_newick(Path(self.cfg.out_dir) / "phylo.nwk")
         self.narrative.dump()
+        elapsed = time.perf_counter() - t0
+        yrs = max(self.year, 1e-6)
         print(f"\n✓ simulación completa: {self.year:.0f} años "
               f"({self.year * HOURS_PER_YEAR:.0f} horas del mundo)")
+        print(f"  tiempo total: {elapsed:.1f}s "
+              f"({elapsed / yrs * 1000:.1f} ms/año)")
         print(f"  outputs → {self.cfg.out_dir}/")
+        # Volcado de rendimiento + gráficos finales
+        try:
+            from .stats.plots import render_all, dump_perf_csv
+            dump_perf_csv(self.cfg.out_dir, self.perf_rows)
+            render_all(self.cfg.out_dir, self.perf_rows)
+        except Exception as e:                                # pragma: no cover
+            print(f"  [plots] omitidos: {e}")
 
     # ------------------------------------------------------------------
     # Serialización (v1.5, N10)

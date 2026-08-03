@@ -30,33 +30,35 @@ def _next_id() -> int:
 # ---------------------------------------------------------------------------
 # CHORDATA
 # ---------------------------------------------------------------------------
-def yi_qi(rng, born_at: float = 0.0, n_loci: int = 64, map_rng=None) -> SpeciesTemplate:
+def serinus_canaria(rng, born_at: float = 0.0, n_loci: int = 64, map_rng=None) -> SpeciesTemplate:
+    """Canario doméstico (Serinus canaria domestica).
+
+    Reemplaza a Yi qi (v1.6): ave paseriforme granívora, vuelo activo,
+    cría rápida, ~20 g. Sesgo dietético hacia semillas y algunos insectos.
+    """
     hints = {
-        "mass_g_opt": 380, "size_mm_opt": 600,
-        "temp_opt": 24.0, "temp_sigma": 8.0,
-        "min_temp": 5, "max_temp": 38,
-        "salt_tolerance": 2,
-        "diet_bias": {"bug": 55, "meat": 25, "vegetal": 5, "fish": 10, "micro": 5},
-        # Yi qi: sensorial (vista, olfato), motor arborícola (climbing, flying).
-        # NADA de bioluminiscencia / toxicidad / electric / fire — deben
-        # desbloquearse por evolución si acaso, no venir de fábrica.
+        "mass_g_opt": 20, "size_mm_opt": 125,
+        "temp_opt": 20.0, "temp_sigma": 7.0,
+        "min_temp": 2, "max_temp": 34,
+        "salt_tolerance": 1,
+        "diet_bias": {"bug": 20, "meat": 2, "vegetal": 65, "fish": 3, "micro": 10},
         "abilities_bias": {
-            "flying_level": 55, "climbing_level": 75,
-            "sight_level": 70, "smell_level": 55, "hearing_level": 50,
+            "flying_level": 85, "climbing_level": 45,
+            "sight_level": 75, "smell_level": 20, "hearing_level": 70,
         },
-        "biomes_ok": {"bosque templado", "selva tropical",
-                      "bosque boreal", "sabana"},
+        "biomes_ok": {"bosque templado", "pradera templada",
+                      "sabana", "costa"},
         "aquatic": False,
-        "body_plan": "reptilia",
-        "breeding_lapse": 1.0,
-        "baby_quantity": 5,
-        "life_expectancy": 12,
+        "body_plan": "aves",
+        "breeding_lapse": 0.4,
+        "baby_quantity": 4,
+        "life_expectancy": 10,
     }
     return SpeciesTemplate(
         species_id=_next_id(),
-        scientific_name="Yi qi",
-        taxonomy=["Animalia", "Chordata", "Reptilia", "Dinosauria",
-                  "Theropoda", "Scansoriopterygidae"],
+        scientific_name="Serinus canaria domestica",
+        taxonomy=["Animalia", "Chordata", "Aves", "Passeriformes",
+                  "Fringillidae", "Serinus"],
         kingdom="chordata",
         parent=None,
         born_at=born_at,
@@ -157,6 +159,7 @@ def poa_annua(rng, born_at: float = 0.0, n_loci: int = 48, map_rng=None) -> Spec
         n_loci=n_loci, n_chromosomes=7,
         gp_map=flora_gpmap(n_loci, rng, is_fungi=False, hints=hints, map_rng=map_rng),
         hints=hints,
+        evolve=False,
     )
 
 
@@ -186,6 +189,7 @@ def phyllostachys_edulis(rng, born_at: float = 0.0, n_loci: int = 56, map_rng=No
         n_loci=n_loci, n_chromosomes=12,
         gp_map=flora_gpmap(n_loci, rng, is_fungi=False, hints=hints, map_rng=map_rng),
         hints=hints,
+        evolve=False,
     )
 
 
@@ -212,6 +216,7 @@ def orchis_stoneplace(rng, born_at: float = 0.0, n_loci: int = 48, map_rng=None)
         n_loci=n_loci, n_chromosomes=10,
         gp_map=flora_gpmap(n_loci, rng, is_fungi=False, hints=hints, map_rng=map_rng),
         hints=hints,
+        evolve=False,
     )
 
 
@@ -240,6 +245,7 @@ def pleurotus_ostreatus(rng, born_at: float = 0.0, n_loci: int = 48, map_rng=Non
         n_loci=n_loci, n_chromosomes=11,
         gp_map=flora_gpmap(n_loci, rng, is_fungi=True, hints=hints, map_rng=map_rng),
         hints=hints,
+        evolve=False,
     )
 
 
@@ -249,7 +255,7 @@ def all_prototype_species(rng, map_rng=None) -> list[SpeciesTemplate]:
     independientemente del orden de creación (N2).
     """
     factories = [poa_annua, helianthus_annuus, phyllostachys_edulis,
-                 orchis_stoneplace, pleurotus_ostreatus, yi_qi,
+                 orchis_stoneplace, pleurotus_ostreatus, serinus_canaria,
                  triops_longicaudatus]
     out = []
     for i, fn in enumerate(factories):
