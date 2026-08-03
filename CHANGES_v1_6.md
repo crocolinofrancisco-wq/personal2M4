@@ -21,9 +21,17 @@ Nuevo flag `SpeciesTemplate.evolve` (default `True`). Cuando es `False`:
   sin recalcular la G→P.
 - `try_speciate(...)` se salta por completo.
 
-Marcadas como `evolve=False`: **Poa annua, Phyllostachys edulis,
+Marcadas como `evolve=False`: **Poa annua, Triticum dicoccoides,
 Orchis stoneplacensis, Pleurotus ostreatus**. Sólo **Helianthus annuus**
 sigue evolucionando como productor primario (junto con los cordados).
+
+## 1.1 — v1.6.1: bambú → trigo silvestre
+
+**Phyllostachys edulis → Triticum dicoccoides** (trigo silvestre,
+ancestro del trigo domesticado). Gramínea anual mediterránea en vez de
+bambú perenne: ciclo de vida corto (`life_expectancy=1`), grano en vez
+de rizoma (`seed_resistance_level=30` en vez de 15), sin alelopatía
+agresiva (`allelopathy=10` en vez de 65). Sigue con `evolve=False`.
 
 ## 3. Mapa DDG real como default
 

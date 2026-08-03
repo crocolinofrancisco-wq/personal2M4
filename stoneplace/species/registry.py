@@ -163,25 +163,26 @@ def poa_annua(rng, born_at: float = 0.0, n_loci: int = 48, map_rng=None) -> Spec
     )
 
 
-def phyllostachys_edulis(rng, born_at: float = 0.0, n_loci: int = 56, map_rng=None) -> SpeciesTemplate:
+def triticum_dicoccoides(rng, born_at: float = 0.0, n_loci: int = 56, map_rng=None) -> SpeciesTemplate:
+    """Trigo silvestre (Triticum dicoccoides) — gramínea anual mediterránea,
+    ancestro del trigo domesticado. Reemplaza al bambú (v1.6.1): ciclo
+    anual corto, semilla pesada (grano) con dispersión corta, sin
+    rizomas invasivos ni alelopatía agresiva."""
     hints = {
-        # Bambú: la masa por INDIVIDUO en el simulador la bajamos ~4× para
-        # que un solo bosquecillo no ocupe la mitad del ecosistema (P: bug
-        # de dominancia de bambú). Se compensa con más individuos.
-        "mass_g_opt": 10000, "size_mm_opt": 15000,
-        "temp_opt": 20.0, "temp_sigma": 6.0,
-        "min_temp": -5, "max_temp": 35,
-        "min_ph": 5.0, "max_ph": 7.0,
-        "salt_tolerance": 1,
-        "biomes_ok": {"bosque templado", "selva tropical", "sabana"},
-        "life_expectancy": 60, "breeding_lapse": 20.0, "baby_quantity": 400,
-        "photosynthesis": 92, "allelopathy": 65, "aquatic": False,
+        "mass_g_opt": 1.2, "size_mm_opt": 700,
+        "temp_opt": 17.0, "temp_sigma": 8.0,
+        "min_temp": -8, "max_temp": 36,
+        "min_ph": 5.8, "max_ph": 8.2,
+        "salt_tolerance": 3,
+        "biomes_ok": {"pradera templada", "sabana", "bosque templado"},
+        "life_expectancy": 1.0, "breeding_lapse": 1.0, "baby_quantity": 60,
+        "photosynthesis": 88, "allelopathy": 10, "aquatic": False,
         "body_plan": "grass",
-        "seed_resistance_level": 15,   # rizomas locales, casi no viajan
+        "seed_resistance_level": 30,   # grano pesado: dispersión moderada
     }
     return SpeciesTemplate(
         species_id=_next_id(),
-        scientific_name="Phyllostachys edulis",
+        scientific_name="Triticum dicoccoides",
         taxonomy=["Plantae", "Tracheophyta", "Liliopsida",
                   "Poales", "Poaceae"],
         kingdom="plantae",
@@ -254,7 +255,7 @@ def all_prototype_species(rng, map_rng=None) -> list[SpeciesTemplate]:
     para construir su GPMap. Esto congela la disposición locus↔rasgo
     independientemente del orden de creación (N2).
     """
-    factories = [poa_annua, helianthus_annuus, phyllostachys_edulis,
+    factories = [poa_annua, helianthus_annuus, triticum_dicoccoides,
                  orchis_stoneplace, pleurotus_ostreatus, serinus_canaria,
                  triops_longicaudatus]
     out = []

@@ -49,10 +49,10 @@ stoneplace/
 |----------|----------------------------|---------------------------------|
 | Plantae  | *Poa annua*                | césped colonizador              |
 | Plantae  | *Helianthus annuus*        | girasol heliófilo               |
-| Plantae  | *Phyllostachys edulis*     | bambú moso                      |
+| Plantae  | *Triticum dicoccoides*     | trigo silvestre                 |
 | Plantae  | *Orchis stoneplacensis*    | flor ombrófila                  |
 | Fungi    | *Pleurotus ostreatus*      | hongo saprófito                 |
-| Chordata | *Yi qi*                    | vertebrado terrestre principal  |
+| Chordata | *Serinus canaria domestica*| vertebrado terrestre principal  |
 | Chordata | *Triops longicaudatus*     | notostráceo acuático            |
 
 ## Ciclo de siembra
